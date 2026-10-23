@@ -1,0 +1,680 @@
+# 发票台账核对 规则库
+# 规则数据与代码分离：替换本文件即可切换规则集版本，无需改代码。
+#
+# 条款引用纪律：
+#   - excerpt 必须是逐字引文；取不到就写“本次未取得”，不要概括。
+#   - kind: direct                      条文直接规定（severity 可到 error）
+#   - kind: arithmetic                  算术恒等式（severity 可到 error）
+#   - kind: data-integrity              数据完整性/唯一性（severity 可到 error）
+#   - kind: derived-from-principle      由原则推导（severity 最多 warn）
+#   - kind: institutional-configuration 本机构阈值（severity 最多 info）
+#
+# 本规则库的边界：
+#   1) 只核对台账/票面自身的一致性与完整性，不判定虚开、不判定业务真实性；
+#   2) 不替代税务机关查验，不替代财务复核；
+#   3) 税率-品名、连号、集中开票是风险提示，不是定性结论。
+
+plugin: dsh-invoice-ledger
+version: "2026.1"
+
+profile:
+  company:
+    name: "示例科技有限公司"
+    taxId: "91110108MA01ABCDEF"
+    aliases:
+      - "示例科技有限公司"
+      - "示例科技"
+    entities:
+      - name: "示例科技上海分公司"
+        taxId: "91310115MA1K123456"
+  period: "2026-10"
+  currency: CNY
+  companyStartDate: "2015-01-01"
+  internalSubmitDays: 90
+  amountTolerance: 0.01
+  roundingTolerance: 0.02
+  lineTolerance: 0.02
+  largeAmountThreshold: 1000000
+  sameSellerDailyThreshold: 10
+  sequence:
+    minRun: 3
+    maxGap: 2
+    windowDays: 31
+    highVolumeSellers:
+      - "中国石化"
+      - "中国石油"
+      - "国家电网"
+  personalTitleAllowedDocTypes:
+    - train
+    - air
+    - taxi
+    - quota
+    - medical
+    - education
+  duplicateScope:
+    - batch
+    - forms
+    - history
+  historyFile: "./history/ledger.jsonl"
+
+rules:
+  - id: INV-001
+    title: 票种与发票号码/代码格式应匹配
+    severity: warn
+    basis:
+      document: 国家税务总局关于推广应用全面数字化电子发票的公告
+      number: 国家税务总局公告2024年第11号
+      clause: 第四条
+      excerpt: 数电发票的号码为20位，其中：第1-2位代表公历年度的后两位，第3-4位代表开票方所在的省级税务局区域代码，第5位代表开具渠道等信息，第6-20位为顺序编码。
+      kind: direct
+      source: https://guangxi.chinatax.gov.cn/chongzuo/tzgg_15657/tzgg_15658/202412/t20241203_410125.html
+    params:
+      check:
+        kind: invoiceKey
+        docTypeField: docType
+        codeField: invoiceCode
+        numberField: invoiceNumber
+        dateField: issueDate
+        patterns:
+          vat_ne: "^\\d{20}$"
+          vat_paper: "^\\d{8}$"
+          vat_e: "^\\d{8}$"
+          train: "^\\d{8,20}$"
+          air: "^\\d{8,20}$"
+        crossCheckYearPrefix: true
+    note: >-
+      数电票 20 位号码的前两位是年度后两位，可与开票日期交叉核对；但第 3-4 位区域代码
+      的完整对照表未在公告中给出，本规则不据此判错。类型不明时只校验 8-20 位数字。
+
+  - id: INV-002
+    title: 开票日期应可解析且不在未来
+    severity: error
+    basis:
+      document: 台账日期自洽（无直接标准条文）
+      number: 无统一标准（本条依据为日期可解析与时间先后）
+      clause: 不属于标准条款（本条为日期核对）
+      excerpt: 本条依据为日期可解析与时间先后，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: arithmetic
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: dateWindow
+        field: issueDate
+        notFuture: true
+        minDate: "${profile.companyStartDate}"
+        beforeMinDateSeverity: warn
+        timezone: Asia/Shanghai
+    note: >-
+      日期不可解析时直接报 error，不静默跳过；跨年票不在这里报（见 INV-017），
+      避免把正常的 12 月票/1 月报销误判。
+
+  - id: INV-003
+    title: 价税合计应等于金额与税额之和
+    severity: error
+    basis:
+      document: 价税合计的算术定义（无直接标准条文）
+      number: 无统一标准（本条依据为算术恒等式）
+      clause: 不属于标准条款（本条为算术核对）
+      excerpt: 本条依据为价税合计的算术定义，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: arithmetic
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: moneyEquation
+        fields: [amount, tax]
+        target: total
+        tolerance: 0.01
+        roundingTolerance: 0.02
+        sameSign: true
+        downgradeWhenRemarkContains: ["差额征税", "通行费", "成品油"]
+    note: >-
+      0.01 以内通过；0.01-0.02 标 info（分位舍入）；超过 0.02 报 error。
+      差额征税/通行费/成品油等特殊计算可能不满足简单加法，命中备注时降为 warn。
+
+  - id: INV-004
+    title: 税率与金额、税额应自洽
+    severity: warn
+    basis:
+      document: 增值税法
+      number: 中华人民共和国主席令第四十一号
+      clause: 第十条
+      excerpt: 纳税人销售货物、加工修理修配服务、有形动产租赁服务，进口货物，除本条第二项、第四项、第五项规定外，税率为百分之十三。
+      kind: derived-from-principle
+      source: http://xiamen.chinatax.gov.cn/fgk/L6050.html
+    params:
+      check:
+        kind: rateEquation
+        amountField: amount
+        rateField: taxRate
+        taxField: tax
+        toleranceAbs: 0.01
+        tolerancePct: 0.0005
+        skipRateValues: ["免税", "不征税", "***", "0%", "零税率"]
+    note: >-
+      行级优先；无明细时按票面金额×税率≈税额。多税率、折扣行、简易计税、差额征税
+      都可能不满足，命中即 warn，不报 error。税率缺失时 skip，不猜。
+
+  - id: INV-005
+    title: 同一张发票在本次台账内只能出现一次
+    severity: error
+    basis:
+      document: 财政部 国家档案局关于规范电子会计凭证报销入账归档的通知
+      number: 财会〔2020〕6号
+      clause: 第三条（三）
+      excerpt: 设定了经办、审核、审批等必要的审签程序，且能有效防止电子会计凭证重复入账。
+      kind: direct
+      source: https://kjs.mof.gov.cn/zhengcefabu/202003/t20200331_3490938.htm
+    params:
+      check:
+        kind: uniqueInvoice
+        key: invoiceKey
+        scope: batch
+        conflictFields: [sellerTaxId, buyerTaxId]
+    note: >-
+      数电票用 20 位号码；纸票用代码+号码。同键不同销方/购方升级为“号码冲突”。
+      PDF+XML 同一张票应在摄取阶段合并，不算重复。
+
+  - id: INV-006
+    title: 同一张发票不得跨报销单或历史重复报销
+    severity: error
+    basis:
+      document: 财政部 国家档案局关于规范电子会计凭证报销入账归档的通知
+      number: 财会〔2020〕6号
+      clause: 第三条（三）
+      excerpt: 设定了经办、审核、审批等必要的审签程序，且能有效防止电子会计凭证重复入账。
+      kind: direct
+      source: https://kjs.mof.gov.cn/zhengcefabu/202003/t20200331_3490938.htm
+    params:
+      check:
+        kind: duplicateAcross
+        key: invoiceKey
+        against: [forms, history]
+        formNoField: formNo
+        personField: reimburser
+        historyFile: "${profile.historyFile}"
+        requireHistory: false
+    note: >-
+      没有历史台账时本条进入 skipped，并在报告写“历史重复未核对”，不能写“通过”。
+      同一张票拆两次报销必须显式 split 标记，否则报 error。
+
+  - id: INV-007
+    title: 同一文件不应重复上传
+    severity: info
+    basis:
+      document: 台账文件完整性（无直接标准条文）
+      number: 无统一标准（本条依据为文件哈希）
+      clause: 不属于标准条款（本条为文件完整性核对）
+      excerpt: 本条依据为文件内容哈希，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: data-integrity
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: fileLink
+        hashField: sha256
+        duplicateHashSeverity: info
+        requireEveryFileMapped: false
+    note: >-
+      同一张票的 PDF+XML 哈希不同，不报；同哈希不同发票键才提示“内容相同但键不同”。
+
+  - id: INV-008
+    title: 红字发票应与蓝字发票关联且累计不超蓝票金额
+    severity: warn
+    basis:
+      document: 国家税务总局关于推广应用全面数字化电子发票的公告
+      number: 国家税务总局公告2024年第11号
+      clause: 第八条
+      excerpt: 蓝字数电发票开具后，如发生销售退回（包括全部退回和部分退回）、开票有误、应税服务中止（包括全部中止和部分中止）、销售折让等情形的，应当按照规定开具红字数电发票。
+      kind: direct
+      source: https://guangxi.chinatax.gov.cn/chongzuo/tzgg_15657/tzgg_15658/202412/t20241203_410125.html
+    params:
+      check:
+        kind: redLetter
+        isRedField: isRed
+        totalField: total
+        originalNumberField: originalInvoiceNumber
+        tolerance: 0.01
+        inferBy: [sellerTaxId, buyerTaxId, absTotal, issueDate]
+    note: >-
+      没有原票号时按“同销方+同购方+金额绝对值+日期”推定，标“推定关联”，需人工确认后才净额；
+      不自动把红票和蓝票抵消成 0，避免掩盖业务问题。
+
+  - id: INV-009
+    title: 购方名称与税号应与本公司（或白名单实体）一致
+    severity: error
+    basis:
+      document: 中华人民共和国发票管理办法
+      number: 国务院令第764号
+      clause: 第二十条
+      excerpt: 不符合规定的发票，不得作为财务报销凭证，任何单位和个人有权拒收。
+      kind: direct
+      source: https://guangdong.chinatax.gov.cn/gdsw/zjfg/2023-10/19/content_9ae2af924a404174a4be0f48ad19d35d.shtml
+    params:
+      check:
+        kind: partyMatch
+        buyerNameField: buyerName
+        buyerTaxIdField: buyerTaxId
+        masterName: "${profile.company.name}"
+        masterTaxId: "${profile.company.taxId}"
+        aliases: "${profile.company.aliases}"
+        entities: "${profile.company.entities}"
+        personalTitleAllowedDocTypes: "${profile.personalTitleAllowedDocTypes}"
+        nameOnlySeverity: warn
+        missingTaxIdSeverity: warn
+    note: >-
+      税号不一致报 error；名称不一致但税号一致报 warn（可能更名）；个人抬头按类型白名单放行。
+      火车票/机票/出租车/定额不要误报“抬头非公司”。
+
+  - id: INV-010
+    title: 销方名称与税号应完整、格式合法
+    severity: warn
+    basis:
+      document: 企业所得税税前扣除凭证管理办法
+      number: 国家税务总局公告2018年第28号
+      clause: 第十二条
+      excerpt: 企业取得私自印制、伪造、变造、作废、开票方非法取得、虚开、填写不规范等不符合规定的发票（以下简称“不合规发票”），以及取得不符合国家法律、法规等相关规定的其他外部凭证（以下简称“不合规其他外部凭证”），不得作为税前扣除凭证。
+      kind: direct
+      source: https://www.gov.cn/zhengce/zhengceku/2019-10/23/content_5444239.htm
+    params:
+      check:
+        kind: partyMatch
+        sellerNameField: sellerName
+        sellerTaxIdField: sellerTaxId
+        requireName: true
+        validateUsccChecksum: true
+        allowMissingTaxIdDocTypes: [taxi, quota, other]
+        allowAgentTaxBureau: true
+    note: >-
+      税务机关代开（名称含“税务局/代开”）和境外供应商不做税号强校验；
+      定额/出租车可能没有税号，只 warn 不 error。
+
+  - id: INV-011
+    title: 税率应与货物或服务类别大体匹配
+    severity: warn
+    basis:
+      document: 中华人民共和国增值税法
+      number: 中华人民共和国主席令第四十一号
+      clause: 第十条
+      excerpt: 纳税人销售交通运输、邮政、基础电信、建筑、不动产租赁服务，销售不动产，转让土地使用权，销售或者进口下列货物，除本条第四项、第五项规定外，税率为百分之九。
+      kind: derived-from-principle
+      source: http://xiamen.chinatax.gov.cn/fgk/L6050.html
+    params:
+      check:
+        kind: rateCategory
+        itemField: itemName
+        rateField: taxRate
+        impossibleOnly: true
+        allowSmallScale: [0.01, 0.03]
+        allowSimpleLevy: [0.03, 0.05]
+        dictionary:
+          - keywords: ["餐饮", "餐费", "食品服务"]
+            impossible: [0.13, 0.09]
+            note: 一般纳税人餐饮服务通常 6%
+          - keywords: ["住宿", "酒店", "客房"]
+            impossible: [0.13, 0.09]
+            note: 住宿服务通常 6%
+          - keywords: ["运输", "客运", "货运", "出租", "网约车"]
+            impossible: [0.13, 0.06]
+            note: 交通运输通常 9%
+          - keywords: ["建筑", "工程", "安装", "施工"]
+            impossible: [0.13, 0.06]
+            note: 建筑服务通常 9%
+          - keywords: ["不动产租赁", "房租", "场地租赁"]
+            impossible: [0.13, 0.06]
+            note: 不动产租赁通常 9% 或 5%
+          - keywords: ["货物", "材料", "设备", "办公用品", "汽油", "柴油"]
+            impossible: [0.06, 0.05]
+            note: 货物销售通常 13%；农产品/图书等特定货物 9%
+          - keywords: ["技术", "咨询", "软件", "服务费", "信息服务"]
+            impossible: [0.13, 0.09]
+            note: 现代服务通常 6%
+    note: >-
+      只报“不可能税率”，不报“未覆盖”；小规模 1%/3%、简易 5%、免税/不征税放行。
+      这是风险提示，不是“错票”结论；混合销售/折扣/优惠需人工确认。
+      另：餐饮服务、居民日常服务、娱乐服务的进项税额不得抵扣（《增值税法》第二十二条第五项）；
+      本工具只核对票面，不判断抵扣资格，不要把“税率 6% 正确”误读成“可以抵扣”。
+
+  - id: INV-012
+    title: 免税、不征税、零税率应与税额为零一致
+    severity: warn
+    basis:
+      document: 中华人民共和国增值税法
+      number: 中华人民共和国主席令第四十一号
+      clause: 第二十四条
+      excerpt: 下列项目免征增值税：
+      kind: derived-from-principle
+      source: http://xiamen.chinatax.gov.cn/fgk/L6050.html
+    params:
+      check:
+        kind: taxStatus
+        rateField: taxRate
+        taxField: tax
+        exemptValues: ["免税", "不征税", "0%", "零税率"]
+        tolerance: 0.01
+    note: >-
+      免税/不征税/零税率而税额非零，报 warn；税额为零但税率正常，也报 warn。
+      差额征税/出口/即征即退等例外在备注命中时 skip。
+
+  - id: INV-013
+    title: 明细行金额与税额合计应与票面一致
+    severity: warn
+    basis:
+      document: 台账算术自洽（无直接标准条文）
+      number: 无统一标准（本条依据为行合计恒等式）
+      clause: 不属于标准条款（本条为算术核对）
+      excerpt: 本条依据为明细行合计恒等式，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: arithmetic
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: lineTotals
+        groupBy: invoiceKey
+        sumFields: [lineAmount, lineTax]
+        targetFields: [amount, tax]
+        tolerance: 0.02
+    note: >-
+      折扣行、多税率、汇总开票、差额征税都可能不满足；命中报 warn。
+      无明细行时 skip，不报“通过”。
+
+  - id: INV-014
+    title: 数量乘单价应与行金额一致
+    severity: info
+    basis:
+      document: 台账算术自洽（无直接标准条文）
+      number: 无统一标准（本条依据为行金额恒等式）
+      clause: 不属于标准条款（本条为算术核对）
+      excerpt: 本条依据为数量、单价与金额的算术关系，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: arithmetic
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: lineMath
+        leftFields: [quantity, unitPrice]
+        targetField: lineAmount
+        toleranceAbs: 0.01
+        tolerancePct: 0.001
+        skipUnits: ["批", "项", "次"]
+        skipIfPriceTaxInclusive: true
+    note: >-
+      含税单价、折扣、多单位会导致不满足；默认 info，不作为错票。
+      单价口径无法判断时 skip，不猜。
+
+  - id: INV-015
+    title: 同一销方对同一购方的连号发票应提示抽查
+    severity: info
+    basis:
+      document: 中华人民共和国发票管理办法
+      number: 国务院令第764号
+      clause: 第二十一条
+      excerpt: 任何单位和个人不得有下列虚开发票行为：
+      kind: derived-from-principle
+      source: https://guangdong.chinatax.gov.cn/gdsw/zjfg/2023-10/19/content_9ae2af924a404174a4be0f48ad19d35d.shtml
+    params:
+      check:
+        kind: sequenceRun
+        groupBy: [sellerTaxId, buyerTaxId, issueYear]
+        numberField: invoiceNumber
+        minRun: 3
+        maxGap: 2
+        windowDays: 31
+        requireSameBuyer: true
+        highVolumeSellers: "${profile.sequence.highVolumeSellers}"
+    note: >-
+      连号本身不违法，也可能是商超/加油站/公用事业正常开票；本规则只提示抽查，
+      禁止写“虚开特征/假票”。同销方当日开票量过大时跳过。
+
+  - id: INV-016
+    title: 同一销方同日对同一购方集中开票应提示抽查
+    severity: info
+    basis:
+      document: 台账风险提示（无直接标准条文）
+      number: 无统一标准（本条依据为集中度阈值）
+      clause: 不属于标准条款（本条为机构阈值）
+      excerpt: 本条依据为机构配置的集中度阈值，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: institutional-configuration
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: groupCount
+        groupBy: [sellerTaxId, buyerTaxId, issueDate]
+        threshold: 10
+        severity: info
+    note: >-
+      月底/季末集中报销、批量采购、拆分开票都会命中；仅提示，不阻断。
+      阈值按机构风险偏好配置。
+
+  - id: INV-017
+    title: 开票日期与所属期、合同、报销时点应大体合理
+    severity: warn
+    basis:
+      document: 台账日期自洽（无直接标准条文）
+      number: 无统一标准（本条依据为日期先后与期间归属）
+      clause: 不属于标准条款（本条为日期核对）
+      excerpt: 本条依据为日期先后与期间归属，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: arithmetic
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: dateWindow
+        field: issueDate
+        period: "${profile.period}"
+        contractDateField: contractDate
+        submittedAtField: submittedAt
+        internalSubmitDays: "${profile.internalSubmitDays}"
+        crossYearSeverity: warn
+        futureSeverity: error
+        beforeContractSeverity: warn
+        afterSubmitSeverity: error
+        internalDeadlineSeverity: info
+    note: >-
+      预付款、补票、合同补签、跨年结算都可能命中；允许忽略并留痕。
+      合同日期/提交日期未提供时，对应子项 skip，不 skip 整条。
+
+  - id: INV-018
+    title: 超过 5 年的发票无法在线查验；会计凭证归档至少 30 年
+    severity: info
+    basis:
+      document: 企业所得税税前扣除凭证管理办法
+      number: 国家税务总局公告2018年第28号
+      clause: 第十七条
+      excerpt: 相应支出可以追补至该支出发生年度税前扣除，但追补年限不得超过五年。
+      kind: direct
+      source: https://www.gov.cn/zhengce/zhengceku/2019-10/23/content_5444239.htm
+    params:
+      check:
+        kind: ageReminder
+        field: issueDate
+        warnAfterYears: 5
+        noteAfterYears: 5
+        message: 超过5年，无法在全国增值税发票查验平台在线查验；以前年度应扣未扣支出追补一般不超过5年。
+    note: >-
+      ⚠️ 本条不是“认证/抵扣期限”。国家税务总局公告2019年第45号已取消2017年1月1日及以后
+      开具的专票等扣税凭证的认证确认、稽核比对、申报抵扣期限。旧规则不得再启用。
+      另：会计凭证最低保管30年（财政部 国家档案局令第79号），见 report 的说明。
+      注意区分：发票存根联的保管期限是5年（《发票管理办法》第二十八条），会计凭证是30年；不要把“发票存根5年”当成“台账/凭证5年”。
+
+  - id: INV-019
+    title: 报销单申报金额应与发票合计一致
+    severity: error
+    basis:
+      document: 台账算术自洽（无直接标准条文）
+      number: 无统一标准（本条依据为报销单合计恒等式）
+      clause: 不属于标准条款（本条为算术核对）
+      excerpt: 本条依据为报销单金额与发票合计的算术关系，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: arithmetic
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: formTotals
+        formNoField: formNo
+        formAmountField: formAmount
+        invoiceTotalField: total
+        nonInvoiceAmountField: nonInvoiceAmount
+        tolerance: 0.01
+        allowPartial: true
+        partialSeverity: info
+        overSeverity: error
+    note: >-
+      含无票补贴/餐补的报销单，用 nonInvoiceAmount 拆分；不拆分会误报。
+      部分报销报 info，不报 error；超过发票合计报 error。
+
+  - id: INV-020
+    title: 同一张发票跨多张报销单或拆分报销应显式标记
+    severity: error
+    basis:
+      document: 财政部 国家档案局关于规范电子会计凭证报销入账归档的通知
+      number: 财会〔2020〕6号
+      clause: 第三条（三）
+      excerpt: 设定了经办、审核、审批等必要的审签程序，且能有效防止电子会计凭证重复入账。
+      kind: direct
+      source: https://kjs.mof.gov.cn/zhengcefabu/202003/t20200331_3490938.htm
+    params:
+      check:
+        kind: duplicateAcross
+        key: invoiceKey
+        against: [forms]
+        formNoField: formNo
+        splitField: split
+        splitAmountField: splitAmount
+        allowExplicitSplit: true
+        overSplitSeverity: error
+    note: >-
+      拆分报销必须显式 split=true 且累计不超过价税合计；否则按重复报销报 error。
+      跨部门/跨主体拆分也应显式标记，不能靠猜。
+
+  - id: INV-021
+    title: 个人抬头发票应确认是否属于可报销类别
+    severity: warn
+    basis:
+      document: 中华人民共和国发票管理办法
+      number: 国务院令第764号
+      clause: 第二十条
+      excerpt: 不符合规定的发票，不得作为财务报销凭证，任何单位和个人有权拒收。
+      kind: derived-from-principle
+      source: https://guangdong.chinatax.gov.cn/gdsw/zjfg/2023-10/19/content_9ae2af924a404174a4be0f48ad19d35d.shtml
+    params:
+      check:
+        kind: partyMatch
+        buyerNameField: buyerName
+        buyerTaxIdField: buyerTaxId
+        personalTitleAllowedDocTypes: "${profile.personalTitleAllowedDocTypes}"
+        personalTitleSeverity: warn
+    note: >-
+      火车票/机票/出租车/定额/医疗/学历教育可能允许个人抬头；按机构制度配置白名单。
+      个人抬头不等于不能报销，也不等于不能税前扣除，需按费用类别判断。
+
+  - id: INV-022
+    title: 购销方相同应提示核实
+    severity: warn
+    basis:
+      document: 台账风险提示（无直接标准条文）
+      number: 无统一标准（本条依据为购销主体一致性）
+      clause: 不属于标准条款（本条为一致性提示）
+      excerpt: 本条依据为购销主体应可区分，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: derived-from-principle
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: partyCompare
+        leftField: buyerTaxId
+        rightField: sellerTaxId
+        relation: notEqual
+        severity: warn
+    note: >-
+      集团内代开、汇总开票、总分公司可能相同；仅提示，不判定虚开。
+
+  - id: INV-023
+    title: 金额与税率应在合理范围
+    severity: warn
+    basis:
+      document: 台账数值合理性（无直接标准条文）
+      number: 无统一标准（本条依据为数值范围）
+      clause: 不属于标准条款（本条为范围核对）
+      excerpt: 本条依据为金额与税率的合理范围，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: data-integrity
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: numberRange
+        field: total
+        zeroSeverity: info
+        negativeWithoutRedSeverity: error
+        largeThreshold: "${profile.largeAmountThreshold}"
+        largeSeverity: info
+      rateRange:
+        min: 0
+        max: 0.13
+        severity: warn
+    note: >-
+      大额只提示，不阻断；红票优先走 INV-008，不在这里报负数为错。
+
+  - id: INV-024
+    title: 台账行应有原件，输入文件应有归属
+    severity: warn
+    basis:
+      document: 财政部 国家档案局关于规范电子会计凭证报销入账归档的通知
+      number: 财会〔2020〕6号
+      clause: 第四条
+      excerpt: 单位以电子会计凭证的纸质打印件作为报销入账归档依据的，必须同时保存打印该纸质件的电子会计凭证。
+      kind: direct
+      source: https://kjs.mof.gov.cn/zhengcefabu/202003/t20200331_3490938.htm
+    params:
+      check:
+        kind: fileLink
+        sourceFileField: sourceFile
+        hashField: sha256
+        requireEveryRowFile: true
+        requireEveryFileMapped: true
+        missingFileSeverity: error
+        orphanFileSeverity: warn
+        modifiedFileSeverity: warn
+    note: >-
+      ledger-only 模式整条 skip，并写“未核对原件”；不要在没有原件时报 error。
+      无法解析的文件列原因（加密/扫描/损坏/不支持），不静默丢。
+
+  - id: INV-025
+    title: 台账不应残留模板占位符或示例数据
+    severity: warn
+    basis:
+      document: 台账数据质量（无直接标准条文）
+      number: 无统一标准（本条依据为占位符模式）
+      clause: 不属于标准条款（本条为数据质量核对）
+      excerpt: 本条依据为模板占位符的常见形式，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: data-integrity
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: placeholderScan
+        fields: [buyerName, sellerName, invoiceNumber, remark]
+        patterns:
+          - "^(XX|某某|示例|测试|公司名称|纳税人识别号)$"
+          - ".*XX公司.*"
+          - ".*示例公司.*"
+          - "^0+$"
+          - "^1+$"
+          # 必须锚定：20 位数电票号码的顺序码天然含连续 0，未锚定的 "00000000"
+          # 会把每一张数电票都误报成占位符。
+          - "^12345678$"
+          - "^0{8,}$"
+          - "^1{8,}$"
+        severity: warn
+    note: >-
+      真实名称含“XX”的误报可忽略；全 0 号码、1900-01-01 也按本规则提示。
+
+  - id: INV-026
+    title: 规则执行覆盖情况应可审计
+    severity: info
+    basis:
+      document: 本工具审计要求（无直接标准条文）
+      number: 无统一标准（本条依据为可追溯性）
+      clause: 不属于标准条款（本条为报告元规则）
+      excerpt: 本条依据为核对过程可追溯，不存在可引用的标准条文；本规则库不伪造引文。
+      kind: data-integrity
+      source: https://www.gov.cn/
+    params:
+      check:
+        kind: coverage
+        reportSkipped: true
+        failOnSilentSkip: true
+    note: >-
+      元规则：任何规则不得“没运行也没说明”。报告必须列出执行/跳过/忽略的数量与原因；
+      没有历史台账、没有原件、没有税率等都要写清楚，不能把“没查”当成“通过”。

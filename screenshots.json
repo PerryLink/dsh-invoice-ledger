@@ -1,0 +1,14 @@
+[
+  {
+    "path": "docs/assets/dsh-invoice-ledger-hero.png",
+    "kind": "hero",
+    "alt": "dsh-invoice-ledger terminal output",
+    "caption": "Real dsh-invoice-ledger checker output."
+  },
+  {
+    "path": "docs/assets/dsh-invoice-ledger-demo.gif",
+    "kind": "demo",
+    "alt": "Animated dsh-invoice-ledger terminal session",
+    "caption": "The same run, assembled line by line."
+  }
+]
