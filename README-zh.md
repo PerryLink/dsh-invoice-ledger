@@ -19,7 +19,7 @@ dsh --profile <name> --dump-config | grep 'dsh-invoice-ledger'
 
 *Workflow overview: document → rule pack → findings.*
 
-**Boundary:** TODO 与最接近的既有做法划清界限——本插件做什么、明确不做什么。
+**边界（中文译文，以英文原文为准）：** 本插件核对台账内部及台账与发票票面之间的一致性；不判断发票真伪，不核实业务实质，不查询税务机关，也不替代财务复核。税率与货物、连号、同日聚集等只是风险提示，不是结论。数电票号码全程按字符串保存：20 位超出 JavaScript 安全整数范围，转成数字会丢失末位，导致两张不同发票被判为相同。
 
 ## What it answers
 
