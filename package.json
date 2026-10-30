@@ -1,6 +1,6 @@
 {
   "name": "dsh-invoice-ledger",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "核对发票台账：重复报销、价税勾稽、抬头、日期、模板占位符，输出异常清单与规范化台账。",
   "type": "module",
   "main": "lib/index.mjs",
