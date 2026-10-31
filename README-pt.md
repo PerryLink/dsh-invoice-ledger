@@ -4,7 +4,9 @@
 
 [![dshfind](https://dshfind.com/api/badge/PerryLink/dsh-invoice-ledger?metric=downloads)](https://dshfind.com/en/plugins/PerryLink/dsh-invoice-ledger?ref=badge)
 
-TODO 一段话说明 dsh-invoice-ledger 读什么材料、核对什么、不作出什么结论。
+`dsh-invoice-ledger` verifica um livro de faturas: duplicidades, aritmética de base e imposto, titular do comprador, datas anómalas e texto de modelo que sobrou numa célula; devolve uma lista de anomalias e uma pasta de trabalho.
+
+Há duas decisões deliberadas. Uma duplicidade é identificada por **código + número, nunca pelo valor**, portanto um erro no valor ainda aparece como duplicidade. O relatório enumera, uma a uma, as regras que esta versão **não conseguiu executar**: um livro com quatro achados e catorze regras não executadas não são quatro problemas.
 
 ## Install
 
@@ -19,15 +21,25 @@ dsh --profile <name> --dump-config | grep 'dsh-invoice-ledger'
 
 *Workflow overview: document → rule pack → findings.*
 
-**Boundary:** TODO 与最接近的既有做法划清界限——本插件做什么、明确不做什么。
+**Limite:** verifica o livro contra si mesmo e contra a face da fatura. Não decide se uma fatura é falsa, não verifica a realidade do negócio, não consulta a autoridade fiscal e não substitui a revisão financeira. A taxa frente ao bem, a numeração sequencial e a concentração no mesmo dia são avisos de risco, não conclusões. O número da fatura eletrónica é guardado como texto: 20 dígitos excedem o intervalo inteiro seguro do JavaScript e convertê-lo perderia os últimos dígitos.
 
 ## What it answers
 
-TODO 列出它回答的问题。
+- A mesma fatura está registada duas vezes, talvez em duas folhas de reembolso?
+- O total coincide com a soma de base e imposto dentro da tolerância?
+- O comprador é realmente esta empresa, ou uma filial registada?
+- A data de emissão está dentro do período, não está no futuro e respeita o prazo interno?
+- Que células ainda têm texto de modelo como `XX公司`?
+
+E, explicitamente: que regras **não** foram executadas?
 
 ## Standards it follows
 
-TODO 列出所依据的文件与条款。
+O pacote cita literalmente os documentos de onde vêm as suas regras. Por exemplo:
+
+- Numeração de fatura eletrónica: Aviso 11/2024 da Administração Estatal de Impostos, artigo 4: 20 dígitos, os dois primeiros o ano, 3–4 a região provincial, o 5 o canal de emissão e 6–20 a sequência.
+- As identidades aritméticas (total = base + imposto) são marcadas como `arithmetic`, não como uma citação inventada, porque são identidades, não normas.
+- As regras sem cláusula citável dizem-no no seu próprio `excerpt` em vez de inventar uma.
 
 ## Compatibility
 
@@ -39,7 +51,9 @@ TODO 列出所依据的文件与条款。
 
 ## What it does
 
-TODO 说明规则表与行为细节。
+O pacote declara `params.check.kind` por regra. Esta versão implementa: `invoiceKey`, `moneyEquation`, `uniqueInvoice`, `duplicateAcross`, `dateWindow`, `partyMatch`, `partyCompare`, `placeholderScan`. Tudo o resto é reportado como não executado, com o seu tipo.
+
+Uma diferença que um caso especial reconhecido explica —regime de diferença, portagens, combustível na observação— é **rebaixada a aviso, não escondida**: o leitor continua a ver o número e decide.
 
 ## Configuration
 
@@ -49,11 +63,15 @@ TODO 说明规则表与行为细节。
 
 ## Material format
 
-TODO 给出完整字段示例。
+Uma linha por fatura. Os campos lidos pelo pacote incluem `invoiceCode`, `invoiceNumber`, `docType`, `issueDate`, `amount`, `tax`, `total`, `buyerName`, `buyerTaxId`, `sellerName`, `sellerTaxId`, `formNo`, `reimburser`, `remark`.
+
+A pasta tem três folhas: resumo, lista de anomalias (uma linha por achado) e regras não executadas.
 
 ## Rule sources
 
-TODO 说明规则数据与代码分离、取证纪律与已知边界。
+As citações vivem no pacote, junto da regra que as usa, e `check:citations` verifica que cada uma aparece literalmente.
+
+Vale a pena registar um defeito do pacote publicado: os padrões de modelo incluíam um `00000000` sem âncora, que coincide com a parte sequencial de quase qualquer número de 20 dígitos. Todas as faturas seriam marcadas como modelo. Os padrões já estão ancorados e um teste garante que um número real não é marcado.
 
 ## Troubleshooting
 
@@ -73,7 +91,110 @@ node ../scripts/sync-shared.mjs dsh-invoice-ledger
 
 ## PerryLink DSH Plugin Family
 
-Full family index: [choose a checker by material](https://perrylink.github.io/zh/checkers/choose/) and [all plugins](https://github.com/PerryLink). This repository is one of them.
+This project is part of the DeepSeek Harness plugin family from [PerryLink](https://github.com/PerryLink). The roster stays collapsed below so every README keeps a short first screen; expand it to see every row and its status.
+
+<details>
+<summary>Expand all plugins</summary>
+
+| Plugin | Status |
+|---|---|
+| **[dsh-aqua-input-check](https://github.com/PerryLink/dsh-aqua-input-check)** |  |
+| **[dsh-archive-check](https://github.com/PerryLink/dsh-archive-check)** |  |
+| **[dsh-auto-review](https://github.com/PerryLink/dsh-auto-review)** |  |
+| **[dsh-autotier](https://github.com/PerryLink/dsh-autotier)** |  |
+| **[dsh-bid-ca-precheck](https://github.com/PerryLink/dsh-bid-ca-precheck)** |  |
+| **[dsh-bid-qual-check](https://github.com/PerryLink/dsh-bid-qual-check)** |  |
+| **[dsh-cert-mcp](https://github.com/PerryLink/dsh-cert-mcp)** |  |
+| **[dsh-checkpoint-rewind](https://github.com/PerryLink/dsh-checkpoint-rewind)** |  |
+| **[dsh-click](https://github.com/PerryLink/dsh-click)** |  |
+| **[dsh-composer-history](https://github.com/PerryLink/dsh-composer-history)** |  |
+| **[dsh-contract-stance](https://github.com/PerryLink/dsh-contract-stance)** |  |
+| **[dsh-customs-doc-check](https://github.com/PerryLink/dsh-customs-doc-check)** |  |
+| **[dsh-data-quality](https://github.com/PerryLink/dsh-data-quality)** |  |
+| **[dsh-demurrage-ledger](https://github.com/PerryLink/dsh-demurrage-ledger)** |  |
+| **[dsh-doublecheck](https://github.com/PerryLink/dsh-doublecheck)** |  |
+| **[dsh-drill-script-check](https://github.com/PerryLink/dsh-drill-script-check)** |  |
+| **[dsh-eia-guide-check](https://github.com/PerryLink/dsh-eia-guide-check)** |  |
+| **[dsh-emergency-plan](https://github.com/PerryLink/dsh-emergency-plan)** |  |
+| **[dsh-essay-rubric-check](https://github.com/PerryLink/dsh-essay-rubric-check)** |  |
+| **[dsh-evidence-check](https://github.com/PerryLink/dsh-evidence-check)** |  |
+| **[dsh-export-ctl-check](https://github.com/PerryLink/dsh-export-ctl-check)** |  |
+| **[dsh-fast](https://github.com/PerryLink/dsh-fast)** |  |
+| **[dsh-fmea-table-check](https://github.com/PerryLink/dsh-fmea-table-check)** |  |
+| **[dsh-forecast-penalty](https://github.com/PerryLink/dsh-forecast-penalty)** |  |
+| **[dsh-fund-research](https://github.com/PerryLink/dsh-fund-research)** |  |
+| **[dsh-github](https://github.com/PerryLink/dsh-github)** |  |
+| **[dsh-gongwen-flow-check](https://github.com/PerryLink/dsh-gongwen-flow-check)** |  |
+| **[dsh-gongwen-word-check](https://github.com/PerryLink/dsh-gongwen-word-check)** |  |
+| **[dsh-guard-plan-qc](https://github.com/PerryLink/dsh-guard-plan-qc)** |  |
+| **[dsh-hazchem-check](https://github.com/PerryLink/dsh-hazchem-check)** |  |
+| **[dsh-hazplan-check](https://github.com/PerryLink/dsh-hazplan-check)** |  |
+| **[dsh-hidden-risk-map](https://github.com/PerryLink/dsh-hidden-risk-map)** |  |
+| **[dsh-hs-classify](https://github.com/PerryLink/dsh-hs-classify)** |  |
+| **[dsh-icd-rule-check](https://github.com/PerryLink/dsh-icd-rule-check)** |  |
+| **[dsh-industry-research](https://github.com/PerryLink/dsh-industry-research)** |  |
+| **[dsh-lawcite-adapter](https://github.com/PerryLink/dsh-lawcite-adapter)** |  |
+| **[dsh-laya](https://github.com/PerryLink/dsh-laya)** |  |
+| **[dsh-lc-doc-check](https://github.com/PerryLink/dsh-lc-doc-check)** |  |
+| **[dsh-learning-gap-check](https://github.com/PerryLink/dsh-learning-gap-check)** |  |
+| **[dsh-library](https://github.com/PerryLink/dsh-library)** |  |
+| **[dsh-local-ai](https://github.com/PerryLink/dsh-local-ai)** |  |
+| **[dsh-lsp-actions](https://github.com/PerryLink/dsh-lsp-actions)** |  |
+| **[dsh-mask](https://github.com/PerryLink/dsh-mask)** |  |
+| **[dsh-mcp-panel](https://github.com/PerryLink/dsh-mcp-panel)** |  |
+| **[dsh-medrec-qc](https://github.com/PerryLink/dsh-medrec-qc)** |  |
+| **[dsh-memento](https://github.com/PerryLink/dsh-memento)** |  |
+| **[dsh-nsfc-form-check](https://github.com/PerryLink/dsh-nsfc-form-check)** |  |
+| **[dsh-nurse-record-check](https://github.com/PerryLink/dsh-nurse-record-check)** |  |
+| **[dsh-observe](https://github.com/PerryLink/dsh-observe)** |  |
+| **[dsh-origin-rvc-check](https://github.com/PerryLink/dsh-origin-rvc-check)** |  |
+| **[dsh-ota-review-check](https://github.com/PerryLink/dsh-ota-review-check)** |  |
+| **[dsh-output-styles](https://github.com/PerryLink/dsh-output-styles)** |  |
+| **[dsh-paper-doc-adapter](https://github.com/PerryLink/dsh-paper-doc-adapter)** |  |
+| **[dsh-permission-rules](https://github.com/PerryLink/dsh-permission-rules)** |  |
+| **[dsh-permit-report-check](https://github.com/PerryLink/dsh-permit-report-check)** |  |
+| **[dsh-pipeline-check](https://github.com/PerryLink/dsh-pipeline-check)** |  |
+| **[dsh-pleading-draft](https://github.com/PerryLink/dsh-pleading-draft)** |  |
+| **[dsh-plugin-doctor](https://github.com/PerryLink/dsh-plugin-doctor)** |  |
+| **[dsh-plugin-guide](https://github.com/PerryLink/dsh-plugin-guide)** |  |
+| **[dsh-plugin-kit](https://github.com/PerryLink/dsh-plugin-kit)** |  |
+| **[dsh-plugin-upgrade](https://github.com/PerryLink/dsh-plugin-upgrade)** |  |
+| **[dsh-policy-brief-draft](https://github.com/PerryLink/dsh-policy-brief-draft)** |  |
+| **[dsh-power-loss-split](https://github.com/PerryLink/dsh-power-loss-split)** |  |
+| **[dsh-power-ticket-check](https://github.com/PerryLink/dsh-power-ticket-check)** |  |
+| **[dsh-ppap-check](https://github.com/PerryLink/dsh-ppap-check)** |  |
+| **[dsh-protest-deadline](https://github.com/PerryLink/dsh-protest-deadline)** |  |
+| **[dsh-railway-window](https://github.com/PerryLink/dsh-railway-window)** |  |
+| **[dsh-repair-order-qc](https://github.com/PerryLink/dsh-repair-order-qc)** |  |
+| **[dsh-research-report](https://github.com/PerryLink/dsh-research-report)** |  |
+| **[dsh-review-reply-check](https://github.com/PerryLink/dsh-review-reply-check)** |  |
+| **[dsh-rulefile-check](https://github.com/PerryLink/dsh-rulefile-check)** |  |
+| **[dsh-safety-brief-check](https://github.com/PerryLink/dsh-safety-brief-check)** |  |
+| **[dsh-score](https://github.com/PerryLink/dsh-score)** |  |
+| **[dsh-session-sync](https://github.com/PerryLink/dsh-session-sync)** |  |
+| **[dsh-site-log-check](https://github.com/PerryLink/dsh-site-log-check)** |  |
+| **[dsh-skill-pack-security](https://github.com/PerryLink/dsh-skill-pack-security)** |  |
+| **[dsh-soe-decision-check](https://github.com/PerryLink/dsh-soe-decision-check)** |  |
+| **[dsh-soilwater-check](https://github.com/PerryLink/dsh-soilwater-check)** |  |
+| **[dsh-sop-sync-check](https://github.com/PerryLink/dsh-sop-sync-check)** |  |
+| **[dsh-spc-gbt-adapter](https://github.com/PerryLink/dsh-spc-gbt-adapter)** |  |
+| **[dsh-talk](https://github.com/PerryLink/dsh-talk)** |  |
+| **[dsh-tender-extract](https://github.com/PerryLink/dsh-tender-extract)** |  |
+| **[dsh-tender-matrix](https://github.com/PerryLink/dsh-tender-matrix)** |  |
+| **[dsh-test-drive](https://github.com/PerryLink/dsh-test-drive)** |  |
+| **[dsh-ticktick](https://github.com/PerryLink/dsh-ticktick)** |  |
+| **[dsh-translate](https://github.com/PerryLink/dsh-translate)** |  |
+| **[dsh-warranty-calc](https://github.com/PerryLink/dsh-warranty-calc)** |  |
+| **[dsh-budget](https://github.com/PerryLink/dsh-budget)** | 🧊 FROZEN — see the repo README |
+| **[dsh-claude-move](https://github.com/PerryLink/dsh-claude-move)** | 🧊 FROZEN — see the repo README |
+| **[dsh-defend](https://github.com/PerryLink/dsh-defend)** | 🧊 FROZEN — see the repo README |
+| **[dsh-draw](https://github.com/PerryLink/dsh-draw)** | 🧊 FROZEN — see the repo README |
+| **[dsh-reach](https://github.com/PerryLink/dsh-reach)** | 🧊 FROZEN — see the repo README |
+| **[dsh-background-agents](https://github.com/PerryLink/dsh-background-agents)** | 🚫 RETIRED — see the repo README |
+| **[dsh-session-pin](https://github.com/PerryLink/dsh-session-pin)** | 🚫 RETIRED — see the repo README |
+| **[dsh-team-rooms](https://github.com/PerryLink/dsh-team-rooms)** | 🚫 RETIRED — see the repo README |
+
+</details>
 
 ## License
 
