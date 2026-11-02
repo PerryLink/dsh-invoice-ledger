@@ -3,12 +3,12 @@
     "path": "docs/assets/dsh-invoice-ledger-hero.png",
     "kind": "hero",
     "alt": "dsh-invoice-ledger terminal output",
-    "caption": "Real dsh-invoice-ledger checker output."
+    "caption": "Real `pnpm test` run: 22/22 tests passed (2 test files)."
   },
   {
     "path": "docs/assets/dsh-invoice-ledger-demo.gif",
     "kind": "demo",
     "alt": "Animated dsh-invoice-ledger terminal session",
-    "caption": "The same run, assembled line by line."
+    "caption": "The same `pnpm test` run — 22/22 tests passed — assembled line by line."
   }
 ]
