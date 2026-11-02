@@ -1,0 +1,3 @@
+req_id,metric,threshold,actual,script,evidence_sha256,pass,source,counted
+CHK-INVOICE-LEDGER-A01,vitest 真实运行,22/22,22,npx vitest run,efef6662f3b5401a9162333e62a02ed9308f5437b8e9e70359f7cffb3ff902c3,true,public/synthetic,false
+CHK-INVOICE-LEDGER-A02,失败用例数,0,0,npx vitest run,efef6662f3b5401a9162333e62a02ed9308f5437b8e9e70359f7cffb3ff902c3,true,public/synthetic,false
