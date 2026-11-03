@@ -128,6 +128,87 @@ describe('checks', () => {
     expect(result.findings.some((item) => item.message.includes('不是本公司'))).toBe(false)
   })
 
+  it('resolves our own tax id from the profile instead of comparing against the template', () => {
+    // `${profile.company.taxId}` used to be resolved to its own literal text,
+    // so the company's real tax id was reported as "not this company".
+    const ledger = table([
+      {
+        invoiceNumber: '26141200000000000010',
+        invoiceCode: '',
+        amount: '10',
+        tax: '0',
+        total: '10',
+        buyerName: '示例科技有限公司',
+        buyerTaxId: '91110108MA01ABCDEF',
+      },
+    ])
+    const result = check(pack, ledger, TODAY)
+    expect(result.findings.filter((item) => item.ruleId === 'INV-009')).toHaveLength(0)
+  })
+
+  it('resolves the company name used in the mismatch report', () => {
+    const ledger = table([
+      { invoiceNumber: '26141200000000000011', invoiceCode: '', amount: '10', tax: '0', total: '10', buyerName: '别的公司', buyerTaxId: '91110108MA01ABCDEF' },
+    ])
+    const result = check(pack, ledger, TODAY)
+    const finding = result.findings.find((item) => item.ruleId === 'INV-009')
+    expect(finding?.expected).toBe('示例科技有限公司')
+  })
+
+  it('enforces companyStartDate as the earliest allowed issue date', () => {
+    const ledgerOf = (issueDate: string, invoiceNumber: string): TableJson =>
+      table([
+        {
+          invoiceNumber,
+          invoiceCode: '',
+          docType: 'vat_ne',
+          issueDate,
+          amount: '10',
+          tax: '0',
+          total: '10',
+          buyerName: '示例科技有限公司',
+          buyerTaxId: '91110108MA01ABCDEF',
+        },
+      ])
+    const before = check(pack, ledgerOf('2014-06-01', '14141200000000000012'), TODAY)
+    const finding = before.findings.find((item) => item.ruleId === 'INV-002' && item.message.includes('早于'))
+    expect(finding).toBeDefined()
+    expect(finding?.message).toContain('2015-01-01')
+    // The lower bound is inclusive: an invoice on the start date is allowed.
+    const atBoundary = check(pack, ledgerOf('2015-01-01', '15141200000000000012'), TODAY)
+    expect(atBoundary.findings.some((item) => item.ruleId === 'INV-002' && item.message.includes('早于'))).toBe(false)
+  })
+
+  it('does not compare a seller name or tax id with our own company', () => {
+    // The seller is the counterparty in this ledger. Comparing it with the
+    // company master data reported every real seller as "not this company".
+    const ledger = table([
+      {
+        invoiceNumber: '26141200000000000013',
+        invoiceCode: '',
+        amount: '10',
+        tax: '0',
+        total: '10',
+        buyerName: '示例科技有限公司',
+        buyerTaxId: '91110108MA01ABCDEF',
+        sellerName: '北京华信贸易有限公司',
+        sellerTaxId: '91110108MA01234567',
+      },
+    ])
+    const result = check(pack, ledger, TODAY)
+    expect(result.findings.filter((item) => item.ruleId === 'INV-010')).toHaveLength(0)
+  })
+
+  it('still reports an empty seller name when the column is present', () => {
+    const ledger = table([
+      { invoiceNumber: '26141200000000000014', invoiceCode: '', amount: '10', tax: '0', total: '10', buyerName: '示例科技有限公司', sellerName: '' },
+    ])
+    const result = check(pack, ledger, TODAY)
+    const finding = result.findings.find((item) => item.ruleId === 'INV-010')
+    expect(finding?.message).toContain('sellerName 为空')
+    expect(finding?.severities).toBe('warn')
+  })
+
   it('flags a future invoice date', () => {
     const ledger = table([
       { invoiceNumber: '26141200000000000006', invoiceCode: '', amount: '10', tax: '0', total: '10', buyerName: '示例科技有限公司', issueDate: '2027-01-01' },
