@@ -30,6 +30,8 @@ export interface LedgerProfile {
   companyTaxId: string
   aliases: string[]
   entities: { name: string; taxId: string }[]
+  /** Earliest date the company could have received an invoice (`YYYY-MM-DD`). */
+  companyStartDate: string
   period: string
   amountTolerance: number
   roundingTolerance: number
@@ -158,6 +160,7 @@ export function loadPack(yaml: string): LedgerPack {
           return { name: String(entry.name ?? ''), taxId: String(entry.taxId ?? '') }
         })
       : [],
+    companyStartDate: String(profileRaw.companyStartDate ?? ''),
     period: String(profileRaw.period ?? ''),
     amountTolerance: num(profileRaw.amountTolerance, 0.01),
     roundingTolerance: num(profileRaw.roundingTolerance, 0.02),
@@ -261,19 +264,33 @@ function isPlaceholder(text: string): boolean {
 /** Resolve a `${profile.x}` template used by the pack's check parameters. */
 function resolve(value: unknown, profile: LedgerProfile): unknown {
   if (typeof value !== 'string') return value
-  const match = /^\$\{profile\.([A-Za-z]+)\}$/u.exec(value)
+  const match = /^\$\{profile\.([A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*)\}$/u.exec(value)
   if (match === null) return value
-  const key = match[1] ?? ''
+  const path = (match[1] ?? '').split('.')
   const table: Record<string, unknown> = {
     period: profile.period,
     internalSubmitDays: profile.internalSubmitDays,
     amountTolerance: profile.amountTolerance,
     roundingTolerance: profile.roundingTolerance,
     lineTolerance: profile.lineTolerance,
-    companyStartDate: '',
+    companyStartDate: profile.companyStartDate,
+    // No history-file entry point exists in this version; keep the template
+    // resolved to an empty string so callers can tell "not configured" from
+    // an unresolved `${...}` literal.
     historyFile: '',
   }
-  return table[key] ?? value
+  if (path.length === 1) return table[path[0] ?? ''] ?? value
+  if (path[0] === 'company' && path.length === 2) {
+    const company: Record<string, unknown> = {
+      name: profile.companyName,
+      taxId: profile.companyTaxId,
+      aliases: profile.aliases,
+      entities: profile.entities,
+    }
+    const key = path[1] ?? ''
+    if (Object.hasOwn(company, key)) return company[key]
+  }
+  return value
 }
 
 /** True when the remark matches one of the downgrade phrases. */
@@ -467,6 +484,9 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
         const period = String(resolve(rule.check.period, profile) ?? '')
         const notFuture = rule.check.notFuture === true
         const maxDays = Number(resolve(rule.check.internalSubmitDays, profile))
+        const minDateRaw = rule.check.minDate === undefined ? '' : String(resolve(rule.check.minDate, profile) ?? '')
+        const minDate = normaliseDate(minDateRaw)
+        const hasMinDate = /^\d{4}-\d{2}-\d{2}$/u.test(minDate)
         const contractField = rule.check.contractDateField === undefined ? '' : String(rule.check.contractDateField)
         rows.forEach((row, index) => {
           const raw = cell(row, field)
@@ -478,6 +498,18 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
           }
           if (notFuture && date > today) {
             push(rule, index + 1, cell(row, 'invoiceNumber'), '开票日期晚于今天', date, `≤ ${today}`, '确认日期是否录错', String(rule.check.futureSeverity ?? 'error') as 'error')
+          }
+          if (hasMinDate && date < minDate) {
+            push(
+              rule,
+              index + 1,
+              cell(row, 'invoiceNumber'),
+              `开票日期早于允许的最早日期（${minDate}）`,
+              date,
+              `≥ ${minDate}`,
+              '确认日期是否录错；公司成立前的票据需要人工判断',
+              String(rule.check.beforeMinDateSeverity ?? 'warn') as 'warn',
+            )
           }
           if (period !== '' && /^\d{4}-\d{2}$/u.test(period) && !date.startsWith(period)) {
             push(
@@ -533,8 +565,17 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
 
       case 'partyMatch': {
         const partyFields = Object.keys(rule.check).filter((key) => key.endsWith('NameField') || key.endsWith('TaxIdField'))
+        // A rule with a buyer field (or an explicit master) is about *our*
+        // company; a rule that only names seller fields is about the
+        // counterparty and must not be compared with the company master data.
+        const buyerSide =
+          rule.check.buyerNameField !== undefined ||
+          rule.check.buyerTaxIdField !== undefined ||
+          rule.check.masterName !== undefined ||
+          rule.check.masterTaxId !== undefined
         const nameField = String(rule.check.buyerNameField ?? rule.check.sellerNameField ?? '')
         const taxField = String(rule.check.buyerTaxIdField ?? rule.check.sellerTaxIdField ?? '')
+        const requireName = rule.check.requireName === true
         const masterName = String(resolve(rule.check.masterName, profile) ?? profile.companyName)
         const masterTax = String(resolve(rule.check.masterTaxId, profile) ?? profile.companyTaxId)
         const aliases = Array.isArray(rule.check.aliases) ? rule.check.aliases.map(String) : profile.aliases
@@ -557,6 +598,17 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
           const name = cell(row, nameField)
           const taxId = cell(row, taxField)
           const docType = cell(row, 'docType')
+          if (!buyerSide) {
+            // The seller is the other party in this ledger, so it is never
+            // "this company": comparing its name or tax id with our own master
+            // data flags every real invoice. Check that the field is filled
+            // when the pack asks for it; format and checksum validation stay
+            // with the rule pack (INV-010 declares them).
+            if (requireName && name === '' && table.columns.includes(nameField)) {
+              push(rule, index + 1, cell(row, 'invoiceNumber'), `${nameField} 为空`, '(空)', '销方名称（非空）', '补齐销方名称后再核对')
+            }
+            return
+          }
           if (allowedDocTypes.has(docType)) return
           if (name !== '' && !allowedNames.has(name)) {
             push(rule, index + 1, cell(row, 'invoiceNumber'), `${nameField} 不是本公司`, name, masterName, '核对抬头；个人抬头的火车票/机票等按票种白名单放行')
