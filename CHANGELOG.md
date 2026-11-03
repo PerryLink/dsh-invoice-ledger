@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `${profile.company.name}` / `${profile.company.taxId}` were not resolved: the lookup table did not contain them and the template pattern rejected dotted paths, so the literal text reached INV-009. The company's own tax id was reported as "not this company", with `${profile.company.taxId}` printed as the expected value. Both paths now resolve from `profile.company`.
+- `${profile.companyStartDate}` was mapped to an empty string, and the date-window check never read `minDate` — so INV-002's lower bound could not run. The date is now loaded from the profile, and an issue date earlier than it is reported at `beforeMinDateSeverity` (warn for the shipped pack). The lower bound is inclusive.
+- INV-010 compared `sellerName` / `sellerTaxId` with our own company master data, so every ledger that names its sellers reported `sellerName 不是本公司` (and would have reported the seller tax id too). Seller-side matching no longer compares the counterparty with the company; it only checks that the seller name is filled when the pack sets `requireName` and the ledger carries the column. Format and checksum validation stay with the rule pack.
+- Adds 5 regression tests (27 total).
+
 ## 0.1.1
 
 - Require `dsh-table-ingest` `^0.2.1`, which adds the ZIP entry-count, per-entry and cumulative output budgets requested in the dshopen review. No rule or report change.
