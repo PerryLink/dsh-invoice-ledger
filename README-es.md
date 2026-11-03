@@ -28,6 +28,7 @@ dsh --profile <name> --dump-config | grep 'dsh-invoice-ledger'
 - ¿La misma factura está registrada dos veces, quizá en dos hojas de reembolso?
 - ¿El total coincide con la suma de base e impuesto dentro de la tolerancia?
 - ¿El comprador es realmente esta empresa, o una sucursal registrada?
+- ¿Está relleno el nombre del vendedor? El vendedor es la contraparte, así que no se compara con el nombre de nuestra empresa.
 - ¿La fecha de emisión cae dentro del periodo, no está en el futuro y respeta el plazo interno?
 - ¿Qué celdas conservan texto de plantilla como `XX公司`?
 
