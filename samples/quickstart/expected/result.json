@@ -1,0 +1,12 @@
+{
+  "tool": "invoice_ledger",
+  "today": "2026-10-15",
+  "summary": {
+    "rows": 5,
+    "errors": 3,
+    "warnings": 0,
+    "infos": 0
+  },
+  "findingCount": 3,
+  "unsupportedCount": 14
+}
