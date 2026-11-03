@@ -37,6 +37,7 @@ dsh --profile <name> --dump-config | grep 'dsh-invoice-ledger'
 - Is the same invoice recorded twice, possibly across two reimbursement forms?
 - Does the total equal amount plus tax, within the configured tolerance?
 - Is the buyer actually this company, or a registered branch?
+- Is the seller name filled in? The seller is the counterparty, so it is not compared with our own company.
 - Is the issue date in the period, not in the future, and inside the internal deadline?
 - Which cells still hold template text such as `XX公司`?
 
