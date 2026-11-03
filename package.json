@@ -26,7 +26,10 @@
     "rules",
     "CHANGELOG.md",
     "SECURITY.md",
-    "docs/assets/*"
+    "docs/assets/*",
+    "samples",
+    "TROUBLESHOOTING.md",
+    "screenshots.json"
   ],
   "scripts": {
     "build": "tsdown",
@@ -43,6 +46,18 @@
     "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "demo": {
+      "sample": "samples/quickstart/input/invoices.csv",
+      "prompt": "用自带样例核对一遍发票台账，告诉我发现了几条问题、分别是什么级别。",
+      "expect": "samples/quickstart/expected/result.json",
+      "screenshot": "docs/assets/quickstart.png",
+      "reads": [
+        "发票台账（.csv）"
+      ],
+      "writes": [],
+      "network": false,
+      "external": []
     }
   },
   "keywords": [
