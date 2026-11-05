@@ -7,7 +7,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const FILES = ['README.md', 'README-zh.md', 'README-es.md', 'README-pt.md', 'README-hi.md']
+const FILES = ['README.en.md', 'README.md']
 const INSTALL_COMMAND = 'dsh plugin --profile <name> add dsh-invoice-ledger'
 
 const failures = []
