@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-dark.svg">
-  <img src="docs/assets/dsh-invoice-ledger-flow-light.svg" width="100%" alt="dsh-invoice-ledger डेटा प्रवाह: बही फ़ाइल (.xlsx / .xlsm / .csv) → dsh-table-ingest → 26 नियमों का पैक → invoice_ledger जाँच → विसंगति सूची + तीन शीट वाली वर्कबुक; बिना चले नियम आईडी से सूचीबद्ध होते हैं और 'नहीं चला' का अर्थ 'पास' कभी नहीं है">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-hero-en-dark.webp">
+  <img src="docs/assets/dsh-invoice-ledger-hero-en-light.webp" width="100%" alt="dsh-invoice-ledger बैनर: दाईं ओर पाँच पंक्तियों की चालान बही, जिसमें पंक्ति 1-2 एक ही चालान कुंजी साझा करती हैं, पंक्ति 3 का कुल 300.00 राशि + कर (226.00) से मेल नहीं खाता, और पंक्ति 5 की तारीख 2026-10-20 जाँच दिवस 2026-10-15 के बाद है; नीचे 3 अंतर, 12 लागू / 14 अनुपयोगी नियम और तीन-शीट वर्कबुक, डेटा samples/quickstart से">
 </picture>
 
 # dsh-invoice-ledger
@@ -38,6 +38,11 @@ dsh plugin --profile <name> add dsh-invoice-ledger
 `dsh-invoice-ledger` एक इनवॉइस बही पढ़कर पंक्ति-दर-पंक्ति जाँचता है: क्या वही इनवॉइस दो बार दर्ज है, क्या कुल सहनशीलता के भीतर मूल्य और कर के योग के बराबर है, क्या खरीदार यही कंपनी (या पंजीकृत शाखा) है, क्या जारी करने की तिथि अवधि में है और भविष्य में नहीं है, और क्या किसी सेल में अब भी टेम्पलेट टेक्स्ट बचा है। परिणाम विसंगतियों की सूची है जो पंक्ति दिखाती है और वास्तविक मान, अपेक्षित मान, सुझाया गया कदम व आधार देती है, साथ में तीन शीट वाली वर्कबुक।
 
 दो बातें जानबूझकर ऐसी हैं। दोहराव **इनवॉइस कोड + नंबर से तय होता है, राशि से कभी नहीं**, इसलिए राशि में गलती होने पर भी वह दोहराव के रूप में दिखेगा। और रिपोर्ट उन हर नियम को नाम लेकर गिनाती है जो इस संस्करण में **नहीं चले**: चार विसंगतियाँ और चौदह बिना चले नियम, चार समस्याएँ नहीं हैं।
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-v5-dark.svg">
+  <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="dsh-invoice-ledger संरचना: बही फ़ाइल और 26 नियमों का पैक invoice_ledger गेट में मिलते हैं, जो params.check.kind से वितरित करता है; लागू चैनल (12 नियम) 3 पंक्ति-स्तरीय अंतर देता है, अनुपयोगी चैनल 14 नियम आईडी और प्रकार सूचीबद्ध करता है, और दोनों चैनल Markdown रिपोर्ट (पहले अनुपयोगी, फिर अंतर) और तीन-शीट वर्कबुक पर फिर मिलते हैं">
+</picture>
 
 ## तीन चरणों में शुरुआत
 
@@ -297,7 +302,7 @@ node ../scripts/sync-shared.mjs dsh-invoice-ledger   # साझा किट �
 | `tests/` | vitest: नियम व्यवहार और सीमा अर्थशास्त्र |
 | `samples/quickstart/` | एक आदेश में शुरुआती नमूना |
 
-नियम पैक डेटा है, कोड नहीं: `rules/*.yaml` बदलकर TypeScript छुए बिना नियम-सेट बदलें, और पैक लोड के समय जाँचा जाता है, विश्वास नहीं किया जाता। README चित्र [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) से क्रमादेशित रूप से बनते हैं (Python + Pillow) और दोबारा चलाए जा सकते हैं; इस प्लगइन में UI नहीं है, इसलिए हीरो हाथ से लिखा SVG प्रवाह चित्र है (हल्का/गहरा जोड़ी, केवल कमांड-सतह टोकन)।
+नियम पैक डेटा है, कोड नहीं: `rules/*.yaml` बदलकर TypeScript छुए बिना नियम-सेट बदलें, और पैक लोड के समय जाँचा जाता है, विश्वास नहीं किया जाता। README चित्र [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) से क्रमादेशित रूप से बनते हैं (हीरो बैनर के लिए Pillow, संरचना चित्र के लिए हाथ से लिखा SVG) और दोबारा चलाए जा सकते हैं; इस प्लगइन में UI नहीं है, इसलिए चित्र क्रमादेशित ग्राफ़िक्स हैं जिनमें केवल कमांड-सतह टोकन हैं।
 
 Topics: `deepseek-harness`, `dsh`, `dsh-plugin`, `cordis`, `invoice`, `ledger`, `reimbursement`, `duplicate`
 

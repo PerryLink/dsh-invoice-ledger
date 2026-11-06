@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-dark.svg">
-  <img src="docs/assets/dsh-invoice-ledger-flow-light.svg" width="100%" alt="Fluxo de dados do dsh-invoice-ledger: arquivo do livro (.xlsx / .xlsm / .csv) → dsh-table-ingest → pacote de 26 regras → verificação invoice_ledger → lista de anomalias + livro de três folhas; regras não executadas são listadas por id e não executada nunca significa aprovada">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-hero-en-dark.webp">
+  <img src="docs/assets/dsh-invoice-ledger-hero-en-light.webp" width="100%" alt="Banner do dsh-invoice-ledger: à direita, um livro de faturas de cinco linhas em que as linhas 1 e 2 compartilham a mesma chave de fatura, a linha 3 tem um total de 300,00 que não bate com valor mais imposto (226,00) e a linha 5 está datada de 2026-10-20, depois do dia de verificação 2026-10-15; abaixo, 3 achados, 12 regras executadas / 14 não executadas e um livro de três folhas, tudo de samples/quickstart">
 </picture>
 
 # dsh-invoice-ledger
@@ -38,6 +38,11 @@ dsh plugin --profile <name> add dsh-invoice-ledger
 `dsh-invoice-ledger` lê um livro de faturas e revê-o linha a linha: se a mesma fatura está registada duas vezes, se o total é igual à base mais o imposto dentro da tolerância, se o comprador é esta empresa (ou uma filial registada), se a data de emissão cai dentro do período e não está no futuro, e se alguma célula ainda tem texto de modelo. Devolve uma lista de anomalias que aponta a linha e dá o valor real, o esperado, a ação sugerida e o fundamento, além de um livro de trabalho de três folhas.
 
 Há duas decisões deliberadas. Uma duplicidade é identificada por **código + número da fatura, nunca pelo valor**, portanto um erro no valor continua a aparecer como duplicidade. E o relatório enumera, uma a uma, todas as regras que esta versão **não conseguiu executar**: um livro com quatro achados e catorze regras não executadas não são quatro problemas.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-v5-dark.svg">
+  <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="Estrutura do dsh-invoice-ledger: o arquivo do livro e o pacote de 26 regras confluem no portão invoice_ledger, que despacha por params.check.kind; o canal executado (12 regras) produz 3 achados por linha, o canal não executado lista 14 ids de regra com o tipo, e os dois canais voltam a confluir no relatório Markdown (primeiro o não executado, depois os achados) e no livro de três folhas">
+</picture>
 
 ## Instalação em três passos
 
@@ -297,7 +302,7 @@ node ../scripts/sync-shared.mjs dsh-invoice-ledger   # atualizar o kit partilhad
 | `tests/` | vitest: comportamento das regras e semântica de limites |
 | `samples/quickstart/` | Exemplo de início rápido num comando |
 
-O pacote de regras é dados, não código: edite `rules/*.yaml` para mudar o conjunto sem tocar em TypeScript, e o pacote é validado ao carregar em vez de ser confiado. As imagens do README são geradas por [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) de forma programática (Python + Pillow) e podem ser executadas novamente; este complemento não tem interface, por isso o hero é um diagrama de fluxo SVG desenhado à mão (par claro/escuro, apenas tokens de superfície de comandos).
+O pacote de regras é dados, não código: edite `rules/*.yaml` para mudar o conjunto sem tocar em TypeScript, e o pacote é validado ao carregar em vez de ser confiado. As imagens do README são geradas por [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) de forma programática (Pillow para o banner hero, SVG escrito à mão para o diagrama de estrutura) e podem ser executadas novamente; este complemento não tem interface, por isso as imagens são gráficos gerados que carregam apenas tokens de superfície de comandos.
 
 Topics: `deepseek-harness`, `dsh`, `dsh-plugin`, `cordis`, `invoice`, `ledger`, `reimbursement`, `duplicate`
 

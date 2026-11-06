@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-dark.svg">
-  <img src="docs/assets/dsh-invoice-ledger-flow-light.svg" width="100%" alt="dsh-invoice-ledger 数据流：台账文件（.xlsx / .xlsm / .csv）→ dsh-table-ingest 摄取 → 规则库 26 条 → invoice_ledger 检查 → 异常清单 + 三页工作簿；未执行的规则按 id 单列，未执行不等于通过">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-hero-zh-dark.webp">
+  <img src="docs/assets/dsh-invoice-ledger-hero-zh-light.webp" width="100%" alt="dsh-invoice-ledger 横幅：右侧是一份 5 行发票台账，第 1、2 行共用同一个发票键、第 3 行价税合计 300.00 与金额加税额 226.00 不符、第 5 行开票日期 2026-10-20 晚于基准日 2026-10-15；下方是 3 条差异、12 条执行 / 14 条未执行规则和三页工作簿，数据取自 samples/quickstart">
 </picture>
 
 # dsh-invoice-ledger
@@ -38,6 +38,11 @@ dsh plugin --profile <name> add dsh-invoice-ledger
 `dsh-invoice-ledger` 读一份发票台账，逐行核对：同一张发票有没有被记两次、价税合计在容差内是否等于金额加税额、购方抬头是不是本公司（或已登记分支机构）、开票日期是否落在所属期且不在未来、单元格里是否还留着 `XX公司` 这类模板文字。结果是一份异常清单（指到行，给出实际值、期望值、建议处理与依据）和一份三页工作簿。
 
 有两处是刻意的：判重只看**发票代码 + 号码，不看金额**，所以金额写错也仍会被判为重复；报告会逐一列出这一版**没有执行**的规则——一份台账报了 4 条差异、另有 14 条规则没跑，不等于只有 4 个问题。
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-v5-dark.svg">
+  <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="dsh-invoice-ledger 结构：台账文件与 26 条规则库汇流入 invoice_ledger 闸门，按 params.check.kind 派发；执行通道 12 条规则产出 3 条指到行的差异，未执行通道把 14 条规则按 id 与检查类型单列；两条通道再汇流到先列未执行、再列差异的 Markdown 报告和三页工作簿">
+</picture>
 
 ## 三步上手
 
@@ -289,7 +294,7 @@ node ../scripts/sync-shared.mjs dsh-invoice-ledger   # 刷新时代码共享套�
 | `tests/` | vitest：规则行为与边界语义 |
 | `samples/quickstart/` | 一键试跑样例 |
 
-规则库是数据不是代码：改 `rules/*.yaml` 即切换规则集，无需动 TypeScript；规则库在加载期校验，而非被信任。README 配图由 [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) 程序化生成（Python + Pillow），可重复执行；本插件无 UI，hero 为手绘 SVG 流程图（深浅双版，图内仅命令面 token）。
+规则库是数据不是代码：改 `rules/*.yaml` 即切换规则集，无需动 TypeScript；规则库在加载期校验，而非被信任。README 配图由 [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) 程序化生成（Python + Pillow 生成 hero 横幅，手写 SVG 生成结构图），可重复执行；本插件无 UI，配图为程序化图形，图内仅命令面 token。
 
 Topics：`deepseek-harness`, `dsh`, `dsh-plugin`, `cordis`, `invoice`, `ledger`, `reimbursement`, `duplicate`
 

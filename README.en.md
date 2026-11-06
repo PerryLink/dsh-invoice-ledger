@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-dark.svg">
-  <img src="docs/assets/dsh-invoice-ledger-flow-light.svg" width="100%" alt="dsh-invoice-ledger data flow: ledger file (.xlsx / .xlsm / .csv) → dsh-table-ingest → 26-rule pack → invoice_ledger check → findings + three-sheet workbook; unexecuted rules are listed by id, and not executed never means passed">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-hero-en-dark.webp">
+  <img src="docs/assets/dsh-invoice-ledger-hero-en-light.webp" width="100%" alt="dsh-invoice-ledger banner: a five-row invoice ledger on the right, where rows 1-2 share one invoice key, row 3 has a total of 300.00 that does not equal amount plus tax (226.00), and row 5 is dated 2026-10-20, after the 2026-10-15 check day; below it 3 findings, 12 executed / 14 not executed rules and a three-sheet workbook, all from samples/quickstart">
 </picture>
 
 # dsh-invoice-ledger
@@ -38,6 +38,11 @@ dsh plugin --profile <name> add dsh-invoice-ledger
 `dsh-invoice-ledger` reads an invoice ledger and checks it row by row: whether the same invoice was recorded twice, whether the total equals amount plus tax within tolerance, whether the buyer is this company (or a registered branch), whether the issue date falls inside the period and is not in the future, and whether any cell still carries template text such as a dummy company name. You get an anomaly list that points at the row and gives the actual value, the expected value, a suggested action and the citation, plus a three-sheet workbook.
 
 Two things are deliberate. A duplicate is keyed on **invoice code + number, never on the amount**, so an amount typo still surfaces as a duplicate. And the report lists, by name, every rule this version **could not execute**: a ledger with four findings and fourteen unexecuted rules is not four problems.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-v5-dark.svg">
+  <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="dsh-invoice-ledger structure: the ledger file and the 26-rule pack merge into the invoice_ledger gate, which dispatches by params.check.kind; the executed channel (12 rules) yields 3 row-level findings, the not-executed channel lists 14 rule ids by id and kind, and both channels re-converge on the markdown report (not executed first, then findings) and the three-sheet workbook">
+</picture>
 
 ## Three-step setup
 
@@ -293,7 +298,7 @@ node ../scripts/sync-shared.mjs dsh-invoice-ledger   # refresh the shared kit
 | `tests/` | vitest: rule behaviour and boundary semantics |
 | `samples/quickstart/` | One-command quickstart sample |
 
-The rule pack is data, not code: edit `rules/*.yaml` to switch the rule set without touching TypeScript, and the pack is validated on load rather than trusted. README images are generated programmatically by [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) (Python + Pillow) and can be re-run safely; this plugin has no UI, so the hero is a hand-written SVG flow diagram (light + dark pair, command-surface tokens only).
+The rule pack is data, not code: edit `rules/*.yaml` to switch the rule set without touching TypeScript, and the pack is validated on load rather than trusted. README images are generated programmatically by [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) (Pillow for the hero banner, hand-written SVG for the structure diagram) and can be re-run safely; this plugin has no UI, so the images are generated graphics carrying command-surface tokens only.
 
 Topics: `deepseek-harness`, `dsh`, `dsh-plugin`, `cordis`, `invoice`, `ledger`, `reimbursement`, `duplicate`
 

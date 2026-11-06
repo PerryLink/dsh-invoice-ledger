@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="660" viewBox="0 0 1100 660" role="img" aria-label="dsh-invoice-ledger structure: the ledger file and the 26-rule pack converge into the invoice_ledger gate, which dispatches by params.check.kind and splits into an executed channel (3 row-level findings) and a not-executed channel (14 rule ids listed by id and kind); both channels converge again on the markdown report order and the three-sheet workbook">
+<title>dsh-invoice-ledger: merge, gate, split, merge</title>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0.35" y2="1">
+    <stop offset="0" stop-color="#131a2a"/>
+    <stop offset="1" stop-color="#0c1016"/>
+  </linearGradient>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="180%">
+    <feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#000000" flood-opacity="0.55"/>
+  </filter>
+  <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+    <circle cx="1.4" cy="1.4" r="1.4" fill="#26314a"/>
+  </pattern>
+</defs>
+<rect width="1100" height="660" fill="url(#bg)"/>
+<rect width="1100" height="660" fill="url(#dots)" opacity=".45"/>
+<text x="44" y="58" fill="#f0f3f9" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="34" font-weight="700">dsh-invoice-ledger</text>
+<text x="44" y="86" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="15">one ledger · 26 rules · 12 executed / 14 not executed · findings + workbook</text>
+<rect x="768" y="40" width="296" height="32" rx="16" fill="#252d44"/>
+<text x="916" y="61" fill="#8496f5" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="13" text-anchor="middle">pack 2026.1 · today 2026-10-15</text>
+<line x1="44" y1="104" x2="1056" y2="104" stroke="#1e2636" stroke-width="1.5"/>
+<g filter="url(#soft)"><rect x="40" y="120" width="260" height="224" rx="20" fill="#1b2231" stroke="#2e374b" stroke-width="1.5"/></g>
+<text x="60" y="150" fill="#8496f5" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="17" font-weight="700" letter-spacing="0.8">INPUT · LEDGER</text>
+<text x="60" y="182" fill="#f0f3f9" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="18" font-weight="700">invoices.csv</text>
+<text x="60" y="206" fill="#8496f5" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">dsh-table-ingest</text>
+<text x="60" y="230" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">5 rows × 8 columns</text>
+<text x="60" y="253" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">.xlsx · .xlsm · .csv</text>
+<line x1="60" y1="265" x2="280" y2="265" stroke="#1e2636" stroke-width="1.4"/>
+<text x="60" y="289" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">one invoice per row</text>
+<text x="60" y="312" fill="#737b8d" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">invoiceNumber · issueDate</text>
+<text x="60" y="333" fill="#737b8d" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">amount · tax · total</text>
+<g filter="url(#soft)"><rect x="40" y="360" width="260" height="208" rx="20" fill="#1b2231" stroke="#2e374b" stroke-width="1.5"/></g>
+<text x="60" y="390" fill="#8496f5" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="17" font-weight="700" letter-spacing="0.8">RULE PACK</text>
+<text x="60" y="420" fill="#f0f3f9" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="16" font-weight="700">rules/invoice-ledger.yaml</text>
+<text x="60" y="444" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">26 rules · version 2026.1</text>
+<text x="60" y="466" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">8 check families in code</text>
+<text x="60" y="487" fill="#737b8d" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">validated on load, not trusted</text>
+<rect x="60" y="504" width="220" height="16" rx="8" fill="#243049"/>
+<rect x="60" y="504" width="102" height="16" rx="8" fill="#8496f5"/>
+<rect x="162" y="504" width="118" height="16" rx="8" fill="#d9a03c" opacity=".9"/>
+<text x="60" y="544" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">12 executed / 14 not executed</text>
+<g filter="url(#soft)"><rect x="330" y="120" width="336" height="310" rx="20" fill="#1b2231" stroke="#2e374b" stroke-width="1.5"/></g>
+<text x="350" y="153" fill="#f0f3f9" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="19" font-weight="700">invoice_ledger · check()</text>
+<text x="350" y="178" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">dispatch by params.check.kind</text>
+<line x1="350" y1="190" x2="646" y2="190" stroke="#1e2636" stroke-width="1.4"/>
+<rect x="350" y="204" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="360" y="223" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">invoiceKey</text>
+<rect x="502" y="204" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="512" y="223" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">moneyEquation</text>
+<rect x="350" y="238" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="360" y="257" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">uniqueInvoice</text>
+<rect x="502" y="238" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="512" y="257" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">duplicateAcross</text>
+<rect x="350" y="272" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="360" y="291" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">dateWindow</text>
+<rect x="502" y="272" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="512" y="291" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">partyMatch</text>
+<rect x="350" y="306" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="360" y="325" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">partyCompare</text>
+<rect x="502" y="306" width="144" height="28" rx="9" fill="#171e2d" stroke="#2e374b" stroke-width="1.2"/>
+<text x="512" y="325" fill="#a8b1c4" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">placeholderScan</text>
+<line x1="350" y1="352" x2="646" y2="352" stroke="#1e2636" stroke-width="1.4"/>
+<rect x="350" y="364" width="172" height="30" rx="15" fill="#252d44"/>
+<text x="362" y="385" fill="#8496f5" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">today 2026-10-15</text>
+<text x="350" y="416" fill="#737b8d" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">original file stays read-only</text>
+<g filter="url(#soft)"><rect x="690" y="120" width="374" height="210" rx="20" fill="#1b2231" stroke="#2e374b" stroke-width="1.5"/></g>
+<text x="710" y="151" fill="#8496f5" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="17" font-weight="700" letter-spacing="0.9">EXECUTED · 12 RULES</text>
+<rect x="958" y="132" width="86" height="26" rx="13" fill="#3a2528"/>
+<text x="1001" y="150" fill="#f08b83" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="13" text-anchor="middle">3 findings</text>
+<line x1="710" y1="164" x2="1044" y2="164" stroke="#1e2636" stroke-width="1.4"/>
+<circle cx="714" cy="189" r="3.4" fill="#f08b83"/>
+<text x="724" y="194" fill="#f0f3f9" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="16">row 2 · invoice key ×2 (rows 1,2)</text>
+<circle cx="714" cy="223" r="3.4" fill="#f08b83"/>
+<text x="724" y="228" fill="#f0f3f9" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="16">row 3 · total 300.00 ≠ 226.00</text>
+<circle cx="714" cy="257" r="3.4" fill="#f08b83"/>
+<text x="724" y="262" fill="#f0f3f9" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="16">row 5 · issue date 2026-10-20 &gt; today</text>
+<text x="710" y="316" fill="#737b8d" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">each finding: row · actual · expected · basis</text>
+<g filter="url(#soft)"><rect x="690" y="346" width="374" height="222" rx="20" fill="#1b2231" stroke="#2e374b" stroke-width="1.5"/></g>
+<text x="710" y="377" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="17" font-weight="700" letter-spacing="0.9">NOT EXECUTED · 14 RULES</text>
+<text x="1044" y="377" fill="#737b8d" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="13" text-anchor="end">by id</text>
+<line x1="710" y1="390" x2="1044" y2="390" stroke="#1e2636" stroke-width="1.4"/>
+<text x="710" y="414" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">listed by rule id + check kind</text>
+<rect x="710" y="426" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="719" y="442" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-004</text>
+<rect x="794" y="426" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="803" y="442" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-007</text>
+<rect x="878" y="426" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="887" y="442" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-008</text>
+<rect x="962" y="426" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="971" y="442" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-011</text>
+<rect x="710" y="454" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="719" y="470" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-012</text>
+<rect x="794" y="454" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="803" y="470" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-013</text>
+<rect x="878" y="454" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="887" y="470" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-014</text>
+<rect x="962" y="454" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="971" y="470" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-015</text>
+<rect x="710" y="482" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="719" y="498" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-016</text>
+<rect x="794" y="482" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="803" y="498" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-018</text>
+<rect x="878" y="482" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="887" y="498" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-019</text>
+<rect x="962" y="482" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="971" y="498" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-023</text>
+<rect x="710" y="510" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="719" y="526" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-024</text>
+<rect x="794" y="510" width="76" height="23" rx="7" fill="#33291a"/>
+<text x="803" y="526" fill="#d9a03c" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="14">INV-026</text>
+<text x="710" y="552" fill="#d9a03c" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">not executed ≠ passed · a missing column ≠ passed</text>
+<path d="M300 232 H316 M300 464 H316 M316 232 V464" stroke="#8496f5" stroke-width="2" fill="none" opacity=".55"/>
+<path d="M316 348 H325" stroke="#8496f5" stroke-width="2" opacity=".65"/>
+<path d="M325 343 L333 348 L325 353 Z" fill="#8496f5" opacity=".7"/>
+<path d="M666 225 H681" stroke="#8496f5" stroke-width="2" opacity=".6"/>
+<path d="M681 220 L689 225 L681 230 Z" fill="#8496f5" opacity=".7"/>
+<path d="M666 392 H678 V460 H685" stroke="#d9a03c" stroke-width="2" fill="none" opacity=".65"/>
+<path d="M685 455 L693 460 L685 465 Z" fill="#d9a03c" opacity=".75"/>
+<path d="M1064 300 H1078 V604 H1070" stroke="#8496f5" stroke-width="2" fill="none" opacity=".5"/>
+<path d="M1064 500 H1078" stroke="#8496f5" stroke-width="2" opacity=".5"/>
+<path d="M1070 599 L1062 604 L1070 609 Z" fill="#8496f5" opacity=".7"/>
+<g filter="url(#soft)"><rect x="40" y="578" width="1024" height="52" rx="18" fill="#1b2231" stroke="#2e374b" stroke-width="1.5"/></g>
+<text x="60" y="601" fill="#f0f3f9" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="15" font-weight="700">markdown report</text>
+<text x="60" y="621" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">order: not executed → findings → boundary</text>
+<text x="524" y="601" fill="#f0f3f9" font-family="Consolas, 'Cascadia Mono', 'SFMono-Regular', Menlo, monospace" font-size="15" font-weight="700">invoice-anomalies.xlsx</text>
+<text x="524" y="621" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">3 sheets: summary · findings · unexecuted</text>
+<text x="880" y="601" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14" font-weight="700">only write</text>
+<text x="880" y="621" fill="#737b8d" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">source stays read-only</text>
+<text x="44" y="650" fill="#a8b1c4" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14">findings only, no compliance verdict · no network · no model call</text>
+<text x="1056" y="650" fill="#737b8d" font-family="'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif" font-size="14" text-anchor="end">Apache-2.0 · PerryLink DSH plugin family</text>
+</svg>

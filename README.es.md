@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-dark.svg">
-  <img src="docs/assets/dsh-invoice-ledger-flow-light.svg" width="100%" alt="Flujo de datos de dsh-invoice-ledger: archivo del libro (.xlsx / .xlsm / .csv) → dsh-table-ingest → paquete de 26 reglas → comprobación invoice_ledger → lista de anomalías + libro de tres hojas; las reglas no ejecutadas se listan por id y no ejecutada nunca significa aprobada">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-hero-en-dark.webp">
+  <img src="docs/assets/dsh-invoice-ledger-hero-en-light.webp" width="100%" alt="Banner de dsh-invoice-ledger: a la derecha, un libro de facturas de cinco filas donde las filas 1 y 2 comparten una misma clave de factura, la fila 3 tiene un total de 300,00 que no coincide con importe más impuesto (226,00) y la fila 5 está fechada el 2026-10-20, posterior al día de control 2026-10-15; debajo, 3 hallazgos, 12 reglas ejecutadas / 14 no ejecutadas y un libro de tres hojas, todo de samples/quickstart">
 </picture>
 
 # dsh-invoice-ledger
@@ -38,6 +38,11 @@ dsh plugin --profile <name> add dsh-invoice-ledger
 `dsh-invoice-ledger` lee un libro de facturas y lo revisa fila a fila: si la misma factura está registrada dos veces, si el total es igual a la base más el impuesto dentro de la tolerancia, si el comprador es esta empresa (o una sucursal registrada), si la fecha de emisión cae dentro del periodo y no está en el futuro, y si alguna celda conserva texto de plantilla. Devuelve una lista de anomalías que señala la fila y da el valor real, el esperado, la acción sugerida y el fundamento, más un libro de trabajo de tres hojas.
 
 Hay dos decisiones deliberadas. Un duplicado se identifica por **código + número de factura, nunca por el importe**, así que un error en el importe sigue apareciendo como duplicado. Y el informe enumera, una por una, todas las reglas que esta versión **no pudo ejecutar**: un libro con cuatro hallazgos y catorce reglas sin ejecutar no son cuatro problemas.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dsh-invoice-ledger-flow-v5-dark.svg">
+  <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="Estructura de dsh-invoice-ledger: el archivo del libro y el paquete de 26 reglas confluyen en la puerta invoice_ledger, que despacha por params.check.kind; el canal ejecutado (12 reglas) produce 3 hallazgos por fila, el canal no ejecutado lista 14 id de regla con su tipo, y ambos canales vuelven a confluir en el informe Markdown (primero lo no ejecutado, luego los hallazgos) y en el libro de tres hojas">
+</picture>
 
 ## Instalación en tres pasos
 
@@ -297,7 +302,7 @@ node ../scripts/sync-shared.mjs dsh-invoice-ledger   # actualizar el kit compart
 | `tests/` | vitest: comportamiento de reglas y semántica de límites |
 | `samples/quickstart/` | Ejemplo de inicio rápido en un comando |
 
-El paquete de reglas es datos, no código: edita `rules/*.yaml` para cambiar el conjunto sin tocar TypeScript, y el paquete se valida al cargar en vez de confiarse. Las imágenes del README las genera [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) de forma programática (Python + Pillow) y se pueden volver a ejecutar; este complemento no tiene interfaz, así que el hero es un diagrama de flujo SVG dibujado a mano (par claro/oscuro, solo tokens de superficie de comandos).
+El paquete de reglas es datos, no código: edita `rules/*.yaml` para cambiar el conjunto sin tocar TypeScript, y el paquete se valida al cargar en vez de confiarse. Las imágenes del README las genera [`scripts/gen-readme-assets.py`](scripts/gen-readme-assets.py) de forma programática (Pillow para el banner hero, SVG escrito a mano para el diagrama de estructura) y se pueden volver a ejecutar; este complemento no tiene interfaz, así que las imágenes son gráficos generados que solo llevan tokens de superficie de comandos.
 
 Topics: `deepseek-harness`, `dsh`, `dsh-plugin`, `cordis`, `invoice`, `ledger`, `reimbursement`, `duplicate`
 
