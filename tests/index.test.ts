@@ -78,9 +78,10 @@ describe('rule pack', () => {
 
   it('separates the implemented kinds from the rest', () => {
     const result = check(pack, table([]), TODAY)
-    // The report must be able to name what did not run.
-    expect(result.unsupported.length).toBeGreaterThan(0)
-    expect(result.unsupported.every((rule) => rule.id !== '' && rule.kind !== '')).toBe(true)
+    // The report must be able to name what did not run, whether because the
+    // engine cannot do it or because it needs external data / a human.
+    expect(result.manual.length).toBeGreaterThan(0)
+    expect([...result.manual, ...result.unsupported].every((rule) => rule.id !== '' && rule.kind !== '')).toBe(true)
   })
 })
 
@@ -252,12 +253,12 @@ describe('report', () => {
     ])
     const result = check(pack, ledger, TODAY)
     const markdown = renderMarkdown(result, 'ledger.xlsx', pack.version)
-    expect(markdown).toContain('未执行的规则（不代表通过）')
-    const unsupportedAt = markdown.indexOf('未执行的规则')
+    expect(markdown).toContain('需要人工/外部数据（本工具不执行）')
+    const manualAt = markdown.indexOf('需要人工/外部数据')
     const findingsAt = markdown.indexOf('## 异常清单')
-    expect(unsupportedAt).toBeGreaterThan(-1)
-    expect(findingsAt === -1 || unsupportedAt < findingsAt).toBe(true)
-    expect(markdown).toContain('未执行的规则不等于通过')
+    expect(manualAt).toBeGreaterThan(-1)
+    expect(findingsAt === -1 || manualAt < findingsAt).toBe(true)
+    expect(markdown).toContain('人工 5 条')
   })
 })
 
@@ -322,10 +323,11 @@ describe('executed / skipped / unsupported partition', () => {
     ])
     const result = check(pack, ledger, TODAY)
     expect(result.summary.total).toBe(pack.rules.length)
-    expect(result.summary.executed + result.summary.skipped + result.summary.unsupported).toBe(pack.rules.length)
+    expect(result.summary.executed + result.summary.skipped + result.summary.manual + result.summary.unsupported).toBe(pack.rules.length)
     const named = new Set([
       ...result.unsupported.map((item) => item.id),
       ...result.skipped.map((item) => item.id),
+      ...result.manual.map((item) => item.id),
     ])
     for (const rule of pack.rules) {
       if (named.has(rule.id)) continue
@@ -337,7 +339,7 @@ describe('executed / skipped / unsupported partition', () => {
     const result = check(pack, table([]), TODAY)
     const skipped = new Set(result.skipped.map((item) => item.id))
     expect(result.unsupported.some((item) => skipped.has(item.id))).toBe(false)
-    expect(result.summary.executed + result.summary.skipped + result.summary.unsupported).toBe(pack.rules.length)
+    expect(result.summary.executed + result.summary.skipped + result.summary.manual + result.summary.unsupported).toBe(pack.rules.length)
   })
 })
 

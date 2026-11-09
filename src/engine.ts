@@ -96,6 +96,8 @@ export interface LedgerResult {
   findings: LedgerFinding[]
   unsupported: UnsupportedRule[]
   skipped: SkippedRule[]
+  /** Rules that need external data or a human decision; never silently passed. */
+  manual: SkippedRule[]
   summary: {
     rows: number
     errors: number
@@ -109,6 +111,8 @@ export interface LedgerResult {
     skipped: number
     /** Rules with no implementation. */
     unsupported: number
+    /** Rules that need external data or a human decision. */
+    manual: number
   }
   warnings: string[]
 }
@@ -415,6 +419,7 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
   const findings: LedgerFinding[] = []
   const unsupported: UnsupportedRule[] = []
   const skipped: SkippedRule[] = []
+  const manual: SkippedRule[] = []
   const notes: string[] = []
   const profile = pack.profile
   const cell = (row: Record<string, string> | undefined, key: string): string => (row?.[key] ?? '').trim()
@@ -422,7 +427,11 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
     `${cell(row, 'invoiceCode')}|${cell(row, 'invoiceNumber')}`
 
   for (const rule of pack.rules) {
-    if (!IMPLEMENTED.has(rule.check.kind)) unsupported.push({ id: rule.id, title: rule.title, kind: rule.check.kind })
+    if (rule.check.manual === true) {
+      manual.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: '需要外部数据或人工核验，本工具不执行' })
+    } else if (!IMPLEMENTED.has(rule.check.kind)) {
+      unsupported.push({ id: rule.id, title: rule.title, kind: rule.check.kind })
+    }
   }
 
   const push = (
@@ -449,6 +458,7 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
   }
 
   for (const rule of pack.rules) {
+    if (rule.check.manual === true) continue
     if (!IMPLEMENTED.has(rule.check.kind)) continue
 
     switch (rule.check.kind) {
@@ -1170,9 +1180,10 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
     warnings: findings.filter((item) => item.severities === 'warn').length,
     infos: findings.filter((item) => item.severities === 'info').length,
     total: pack.rules.length,
-    executed: pack.rules.length - unsupported.length - skipped.length,
+    executed: pack.rules.length - unsupported.length - skipped.length - manual.length,
     skipped: skipped.length,
     unsupported: unsupported.length,
+    manual: manual.length,
   }
-  return { findings, unsupported, skipped, summary, warnings: [...new Set(notes)] }
+  return { findings, unsupported, skipped, manual, summary, warnings: [...new Set(notes)] }
 }

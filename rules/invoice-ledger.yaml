@@ -210,6 +210,7 @@ rules:
     params:
       check:
         kind: fileLink
+        manual: true
         hashField: sha256
         duplicateHashSeverity: info
         requireEveryFileMapped: false
@@ -229,6 +230,7 @@ rules:
     params:
       check:
         kind: redLetter
+        manual: true
         isRedField: isRed
         totalField: total
         originalNumberField: originalInvoiceNumber
@@ -300,6 +302,7 @@ rules:
     params:
       check:
         kind: rateCategory
+        manual: true
         itemField: itemName
         rateField: taxRate
         impossibleOnly: true
@@ -620,6 +623,7 @@ rules:
     params:
       check:
         kind: fileLink
+        manual: true
         sourceFileField: sourceFile
         hashField: sha256
         requireEveryRowFile: true
@@ -673,6 +677,7 @@ rules:
     params:
       check:
         kind: coverage
+        manual: true
         reportSkipped: true
         failOnSilentSkip: true
     note: >-
