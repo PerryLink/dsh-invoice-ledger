@@ -14,20 +14,20 @@
   "rules": {
     "total": 26,
     "executed": 11,
-    "skipped": 13,
-    "manual": 2,
+    "skipped": 14,
+    "manual": 1,
     "unsupported": 0,
-    "implemented": 24
+    "implemented": 25
   },
   "benchmark": {
     "kind": "quickstart-sample",
     "corpus_size": 5,
-    "note": "quickstart synthetic CSV runs 11 of 24 implemented rules; 13 skip for missing fields; 2 are manual/external-data; not a real-world P/R",
+    "note": "quickstart synthetic CSV runs 11 of 25 implemented rules; 14 skip for missing fields; 1 is the coverage meta-rule; not a real-world P/R",
     "measured_at": "2026-11-09"
   },
   "limits": [
-    "2 条规则需要红蓝票关联或覆盖数据，归为 manual",
-    "11 条规则因样例缺 taxRate/formNo/明细/分组字段而跳过；跳过不等于通过",
+    "仅剩 INV-026 覆盖元规则为 manual；红蓝票关联需台账有 isRed/originalInvoiceNumber 字段",
+    "14 条规则因样例缺 taxRate/formNo/明细/分组/红字字段而跳过；跳过不等于通过",
     "不判定虚开、不判定业务真实性、不替代税务查验",
     "尚无真实发票语料的 P/R"
   ]

@@ -316,6 +316,7 @@ export const IMPLEMENTED = new Set([
   'rateEquation',
   'rateCategory',
   'fileLink',
+  'redLetter',
   'ageReminder',
   'numberRange',
   'sequenceRun',
@@ -736,6 +737,68 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
           push(rule, (indexes[0] ?? 0) + 1, '', `同一组（${fields.map((field, i) => `${field}=${values[i]}`).join('、')}）共 ${indexes.length} 张，达到阈值 ${threshold}`, String(indexes.length), `< ${threshold}`, '集中开票可能是月底报销/批量采购/拆分；仅提示，不阻断', severity)
         }
         if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有完整的 ${fields.join('/')} 分组字段，本条未执行` })
+        continue
+      }
+
+      case 'redLetter': {
+        const isRedField = String(rule.check.isRedField ?? 'isRed')
+        const totalField = String(rule.check.totalField ?? 'total')
+        const originalField = String(rule.check.originalNumberField ?? 'originalInvoiceNumber')
+        const tolerance = minor(String(rule.check.tolerance ?? 0.01)) ?? 1n
+        const truthy = (text: string): boolean => /^(true|1|yes|y|是|红|红字|红票)$/iu.test(text.trim())
+        const redRows = rows
+          .map((row, index) => ({ row, index }))
+          .filter(({ row }) => truthy(cell(row, isRedField)))
+        if (redRows.length === 0) {
+          skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `台账没有「${isRedField}」为红字的行，本条未执行` })
+          continue
+        }
+        const blueByNumber = new Map<string, Record<string, string>>()
+        for (const row of rows) {
+          if (truthy(cell(row, isRedField))) continue
+          const number = cell(row, 'invoiceNumber')
+          if (number !== '') blueByNumber.set(number, row)
+        }
+        const groups = new Map<string, { total: bigint; first: number; inferred: boolean; original: string }>()
+        for (const { row, index } of redRows) {
+          const original = cell(row, originalField)
+          let blue = original === '' ? undefined : blueByNumber.get(original)
+          let inferred = false
+          if (blue === undefined) {
+            const seller = cell(row, 'sellerTaxId')
+            const buyer = cell(row, 'buyerTaxId')
+            const amount = minor(cell(row, totalField))
+            const date = normaliseDate(cell(row, 'issueDate'))
+            blue = rows.find((candidate) => {
+              if (truthy(cell(candidate, isRedField))) return false
+              if (seller !== '' && cell(candidate, 'sellerTaxId') !== seller) return false
+              if (buyer !== '' && cell(candidate, 'buyerTaxId') !== buyer) return false
+              if (normaliseDate(cell(candidate, 'issueDate')) !== date) return false
+              const candidateTotal = minor(cell(candidate, totalField))
+              return amount !== undefined && candidateTotal !== undefined && (amount < 0n ? -amount : amount) === candidateTotal
+            })
+            inferred = blue !== undefined
+          }
+          const key = blue === undefined ? `?${index}` : cell(blue, 'invoiceNumber')
+          const bucket = groups.get(key)
+          const amount = minor(cell(row, totalField)) ?? 0n
+          const magnitude = amount < 0n ? -amount : amount
+          if (bucket === undefined) groups.set(key, { total: magnitude, first: index, inferred, original: original === '' ? '(无)' : original })
+          else bucket.total += magnitude
+        }
+        for (const [key, group] of groups) {
+          const blue = key.startsWith('?') ? undefined : blueByNumber.get(key)
+          if (blue === undefined) {
+            push(rule, group.first + 1, '', `红字发票未找到原蓝票（原票号 ${group.original}），也未按销方/购方/金额/日期推定`, group.original, '应能关联到一张蓝票', '核对原票号；无法关联时人工确认，不自动净额')
+            continue
+          }
+          const blueTotal = minor(cell(blue, totalField)) ?? 0n
+          if (group.total > blueTotal + tolerance) {
+            push(rule, group.first + 1, cell(blue, 'invoiceNumber'), `红字发票累计 ${money(group.total)} 超过蓝票金额 ${money(blueTotal)}`, money(group.total), `≤ ${money(blueTotal)}`, '核对红冲金额与蓝票；不自动把红票与蓝票抵消成 0', 'warn')
+          } else if (group.inferred) {
+            push(rule, group.first + 1, cell(blue, 'invoiceNumber'), `红字发票按销方/购方/金额/日期推定关联到蓝票 ${cell(blue, 'invoiceNumber')}，需人工确认`, '推定关联', '原票号可确认关联', '补原票号；确认后才做净额处理', 'info')
+          }
+        }
         continue
       }
 

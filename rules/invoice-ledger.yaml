@@ -229,7 +229,6 @@ rules:
     params:
       check:
         kind: redLetter
-        manual: true
         isRedField: isRed
         totalField: total
         originalNumberField: originalInvoiceNumber

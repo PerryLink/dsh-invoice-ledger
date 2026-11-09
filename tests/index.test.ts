@@ -258,7 +258,7 @@ describe('report', () => {
     const findingsAt = markdown.indexOf('## 异常清单')
     expect(manualAt).toBeGreaterThan(-1)
     expect(findingsAt === -1 || manualAt < findingsAt).toBe(true)
-    expect(markdown).toContain('人工 2 条')
+    expect(markdown).toContain('人工 1 条')
   })
 })
 
@@ -480,5 +480,36 @@ describe('file hashes and source links (INV-007 / INV-024)', () => {
   it('skips the rule when neither hash nor source column is present', () => {
     const result = check(pack, table([row()]), TODAY)
     expect(result.skipped.some((item) => item.id === 'INV-007' || item.id === 'INV-024')).toBe(true)
+  })
+})
+
+describe('red-letter linkage (INV-008)', () => {
+  const blue = (extra: Record<string, string> = {}) => ({
+    invoiceNumber: '26141200000000000051', invoiceCode: '4410', issueDate: '2026-10-08',
+    sellerTaxId: '91440000MA00000001', buyerTaxId: '91440000MA00000002',
+    buyerName: '示例科技有限公司', amount: '100.00', tax: '13.00', total: '113.00', ...extra,
+  })
+
+  it('accepts a red invoice linked to a blue invoice within its amount', () => {
+    const rows = [blue(), blue({ invoiceNumber: '26141200000000000052', isRed: 'true', originalInvoiceNumber: '26141200000000000051', total: '-50.00' })]
+    const result = check(pack, table(rows), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-008' && item.severities === 'warn')).toBe(false)
+  })
+
+  it('flags a red total that exceeds the blue invoice', () => {
+    const rows = [blue(), blue({ invoiceNumber: '26141200000000000052', isRed: 'true', originalInvoiceNumber: '26141200000000000051', total: '-200.00' })]
+    const result = check(pack, table(rows), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-008' && item.severities === 'warn')).toBe(true)
+  })
+
+  it('marks an inferred link as info, not as confirmed', () => {
+    const rows = [blue(), blue({ invoiceNumber: '26141200000000000052', isRed: 'true', total: '-113.00' })]
+    const result = check(pack, table(rows), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-008' && item.message.includes('推定关联'))).toBe(true)
+  })
+
+  it('skips when the ledger has no red-letter column values', () => {
+    const result = check(pack, table([blue()]), TODAY)
+    expect(result.skipped.some((item) => item.id === 'INV-008')).toBe(true)
   })
 })
