@@ -310,6 +310,7 @@ export const IMPLEMENTED = new Set([
   'rateEquation',
   'ageReminder',
   'numberRange',
+  'sequenceRun',
   'groupCount',
   'taxStatus',
   'moneyEquation',
@@ -575,6 +576,68 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
         if (against.includes('history') && rule.check.requireHistory !== true) {
           notes.push(`规则 ${rule.id} 的「历史台账」比对未执行：本版本没有持久化或历史文件入口，只比对了本批次`)
         }
+        continue
+      }
+
+      case 'sequenceRun': {
+        const fields = Array.isArray(rule.check.groupBy) ? rule.check.groupBy.map(String) : ['sellerTaxId', 'buyerTaxId', 'issueYear']
+        const numberField = String(rule.check.numberField ?? 'invoiceNumber')
+        const minRun = Number(rule.check.minRun ?? profile.sequence.minRun)
+        const maxGap = BigInt(Math.max(1, Number(rule.check.maxGap ?? profile.sequence.maxGap)))
+        const highVolume = Array.isArray(rule.check.highVolumeSellers)
+          ? rule.check.highVolumeSellers.map(String)
+          : profile.sequence.highVolumeSellers
+
+        const groupOf = (row: Record<string, string>): string | undefined => {
+          const values: string[] = []
+          for (const field of fields) {
+            let value = cell(row, field)
+            if (value === '' && field === 'issueYear') value = cell(row, 'issueDate').slice(0, 4)
+            if (value === '') return undefined
+            values.push(value)
+          }
+          return values.join('\u0000')
+        }
+
+        const groups = new Map<string, { index: number; number: bigint; date: string }[]>()
+        rows.forEach((row, index) => {
+          const key = groupOf(row)
+          if (key === undefined) return
+          const seller = cell(row, 'sellerName')
+          if (highVolume.some((name) => name !== '' && seller.includes(name))) return
+          const raw = cell(row, numberField).replace(/\D/gu, '')
+          if (raw === '') return
+          let number: bigint
+          try { number = BigInt(raw) } catch { return }
+          const bucket = groups.get(key)
+          const entry = { index, number, date: cell(row, 'issueDate') }
+          if (bucket === undefined) groups.set(key, [entry])
+          else bucket.push(entry)
+        })
+
+        let measured = 0
+        for (const [key, entries] of groups) {
+          measured += 1
+          entries.sort((a, b) => (a.number < b.number ? -1 : a.number > b.number ? 1 : 0))
+          let run: typeof entries = []
+          const flush = (): void => {
+            if (run.length < minRun) return
+            const first = run[0]!
+            const last = run[run.length - 1]!
+            push(rule, first.index + 1, cell(rows[first.index], numberField), `同一组出现 ${run.length} 张连号发票（${cell(rows[first.index], numberField)}–${cell(rows[last.index], numberField)}）`, String(run.length), `< ${minRun} 张连号`, '连号可能是商超/加油站/公用事业正常开票，也可能是拆分；仅提示抽查，不写“虚开”', 'info')
+          }
+          for (const entry of entries) {
+            const previous = run[run.length - 1]
+            if (previous !== undefined && entry.number - previous.number > maxGap) {
+              flush()
+              run = []
+            }
+            run.push(entry)
+          }
+          flush()
+          void key
+        }
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有完整的 ${fields.join('/')} 分组字段或发票号，本条未执行` })
         continue
       }
 

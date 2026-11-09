@@ -14,20 +14,20 @@
   "rules": {
     "total": 26,
     "executed": 11,
-    "skipped": 9,
+    "skipped": 10,
     "manual": 0,
-    "unsupported": 6,
-    "implemented": 20
+    "unsupported": 5,
+    "implemented": 21
   },
   "benchmark": {
     "kind": "quickstart-sample",
     "corpus_size": 5,
-    "note": "quickstart synthetic CSV runs 11 of 20 implemented rules; 9 skip for missing taxRate/formNo/detail columns; 6 need external data; not a real-world P/R",
+    "note": "quickstart synthetic CSV runs 11 of 21 implemented rules; 10 skip for missing taxRate/formNo/detail/date fields; 5 need external data; not a real-world P/R",
     "measured_at": "2026-11-09"
   },
   "limits": [
-    "6 条规则仍需附件、红蓝票关联、商品类别、连号历史等外部数据，尚未实现",
-    "样例缺少 taxRate/formNo/明细列，相关规则会跳过而不是报通过",
+    "5 条规则仍需附件、红蓝票关联、商品类别等外部数据，尚未实现",
+    "样例缺少 taxRate/formNo/明细列，相关规则会跳过而不是报通过；跳过不等于通过",
     "不判定虚开、不判定业务真实性、不替代税务查验",
     "尚无真实发票语料的 P/R"
   ]

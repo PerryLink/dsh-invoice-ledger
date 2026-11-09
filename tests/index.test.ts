@@ -410,3 +410,30 @@ describe('age, numeric range and concentration (INV-015/016/018/023)', () => {
     expect(below.findings.some((item) => item.ruleId === 'INV-016')).toBe(false)
   })
 })
+
+describe('consecutive invoice runs (INV-015)', () => {
+  const row = (number: string, seller = '示例供应商') => ({
+    invoiceNumber: number, invoiceCode: '4410', issueDate: '2026-10-08',
+    sellerTaxId: '91440000MA00000001', sellerName: seller,
+    buyerTaxId: '91440000MA00000002', buyerName: '示例科技有限公司',
+    amount: '100.00', tax: '13.00', total: '113.00',
+  })
+
+  it('reports a run of three consecutive numbers', () => {
+    const rows = ['26141200000000000021', '26141200000000000022', '26141200000000000023'].map((n) => row(n))
+    const result = check(pack, table(rows), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-015')).toBe(true)
+  })
+
+  it('does not report two numbers or a gap larger than maxGap', () => {
+    const two = ['26141200000000000021', '26141200000000000022'].map((n) => row(n))
+    expect(check(pack, table(two), TODAY).findings.some((item) => item.ruleId === 'INV-015')).toBe(false)
+    const gap = ['26141200000000000021', '26141200000000000022', '26141200000000000030'].map((n) => row(n))
+    expect(check(pack, table(gap), TODAY).findings.some((item) => item.ruleId === 'INV-015')).toBe(false)
+  })
+
+  it('skips high-volume sellers', () => {
+    const rows = ['26141200000000000021', '26141200000000000022', '26141200000000000023'].map((n) => row(n, '中国石化'))
+    expect(check(pack, table(rows), TODAY).findings.some((item) => item.ruleId === 'INV-015')).toBe(false)
+  })
+})
