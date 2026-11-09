@@ -9,7 +9,7 @@ node samples/quickstart/run.mjs --check
 样例在 `samples/quickstart/input/`，期望输出在 `samples/quickstart/expected/result.json`；截图见 `docs/assets/quickstart.png`。
 
 
-[English](README.md) · [简体中文](README-zh.md) · [Español](README-es.md) · [Português](README-pt.md) · [हिन्दी](README-hi.md)
+[English](README.md) · [简体中文](README-zh.md)
 
 <!-- topblock:v1 -->
 > **这是什么**　把发票台账逐行看一遍：重复报销、价税勾稽、抬头、日期、模板占位符。
