@@ -317,6 +317,7 @@ export const IMPLEMENTED = new Set([
   'rateCategory',
   'fileLink',
   'redLetter',
+  'coverage',
   'ageReminder',
   'numberRange',
   'sequenceRun',
@@ -425,6 +426,7 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
   const unsupported: UnsupportedRule[] = []
   const skipped: SkippedRule[] = []
   const manual: SkippedRule[] = []
+  const ran = new Set<string>()
   const notes: string[] = []
   const profile = pack.profile
   const cell = (row: Record<string, string> | undefined, key: string): string => (row?.[key] ?? '').trim()
@@ -465,6 +467,7 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
   for (const rule of pack.rules) {
     if (rule.check.manual === true) continue
     if (!IMPLEMENTED.has(rule.check.kind)) continue
+    ran.add(rule.id)
 
     switch (rule.check.kind) {
       case 'invoiceKey': {
@@ -737,6 +740,20 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
           push(rule, (indexes[0] ?? 0) + 1, '', `同一组（${fields.map((field, i) => `${field}=${values[i]}`).join('、')}）共 ${indexes.length} 张，达到阈值 ${threshold}`, String(indexes.length), `< ${threshold}`, '集中开票可能是月底报销/批量采购/拆分；仅提示，不阻断', severity)
         }
         if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有完整的 ${fields.join('/')} 分组字段，本条未执行` })
+        continue
+      }
+
+      case 'coverage': {
+        const accounted = new Set([
+          ...ran,
+          ...skipped.flatMap((entry) => entry.id.split(',')),
+          ...manual.map((entry) => entry.id),
+          ...unsupported.map((entry) => entry.id),
+        ])
+        const missing = pack.rules.filter((rule) => !accounted.has(rule.id))
+        if (missing.length > 0) {
+          push(rule, 0, '', `以下规则既未执行也未说明原因：${missing.map((entry) => entry.id).join('、')}`, String(missing.length), '0', '补齐执行或说明；不得把“没查”当成“通过”', 'error')
+        }
         continue
       }
 

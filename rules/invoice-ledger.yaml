@@ -673,7 +673,6 @@ rules:
     params:
       check:
         kind: coverage
-        manual: true
         reportSkipped: true
         failOnSilentSkip: true
     note: >-

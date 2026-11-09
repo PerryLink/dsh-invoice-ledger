@@ -78,10 +78,11 @@ describe('rule pack', () => {
 
   it('separates the implemented kinds from the rest', () => {
     const result = check(pack, table([]), TODAY)
-    // The report must be able to name what did not run, whether because the
-    // engine cannot do it or because it needs external data / a human.
-    expect(result.manual.length).toBeGreaterThan(0)
-    expect([...result.manual, ...result.unsupported].every((rule) => rule.id !== '' && rule.kind !== '')).toBe(true)
+    // Every rule must land in exactly one bucket; this pack now has no
+    // deliberate manual/unsupported rules left.
+    expect(result.summary.total).toBe(pack.rules.length)
+    expect(result.summary.executed + result.summary.skipped + result.summary.manual + result.summary.unsupported).toBe(pack.rules.length)
+    expect(result.manual.length + result.unsupported.length).toBe(0)
   })
 })
 
@@ -253,12 +254,9 @@ describe('report', () => {
     ])
     const result = check(pack, ledger, TODAY)
     const markdown = renderMarkdown(result, 'ledger.xlsx', pack.version)
-    expect(markdown).toContain('需要人工/外部数据（本工具不执行）')
-    const manualAt = markdown.indexOf('需要人工/外部数据')
+    expect(markdown).toContain('人工 0 条')
     const findingsAt = markdown.indexOf('## 异常清单')
-    expect(manualAt).toBeGreaterThan(-1)
-    expect(findingsAt === -1 || manualAt < findingsAt).toBe(true)
-    expect(markdown).toContain('人工 1 条')
+    expect(findingsAt).toBeGreaterThan(-1)
   })
 })
 
