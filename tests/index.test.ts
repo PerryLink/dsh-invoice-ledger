@@ -340,3 +340,40 @@ describe('executed / skipped / unsupported partition', () => {
     expect(result.summary.executed + result.summary.skipped + result.summary.unsupported).toBe(pack.rules.length)
   })
 })
+
+describe('form totals and tax arithmetic (INV-004 / INV-012 / INV-019)', () => {
+  const row = (extra: Record<string, string>) => ({
+    invoiceNumber: '26141200000000000021', invoiceCode: '4410', issueDate: '2026-10-08',
+    buyerName: '示例科技有限公司', amount: '100.00', tax: '13.00', total: '113.00',
+    ...extra,
+  })
+
+  it('matches a reimbursement form to its invoice total', () => {
+    const result = check(pack, table([row({ formNo: 'BX-1', formAmount: '113.00' })]), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-019')).toBe(false)
+  })
+
+  it('reports a form that claims more than its invoices', () => {
+    const result = check(pack, table([row({ formNo: 'BX-1', formAmount: '120.00' })]), TODAY)
+    const hit = result.findings.find((item) => item.ruleId === 'INV-019')
+    expect(hit?.severities).toBe('error')
+  })
+
+  it('reports partial reimbursement at its configured severity', () => {
+    const result = check(pack, table([row({ formNo: 'BX-1', formAmount: '100.00' })]), TODAY)
+    const hit = result.findings.find((item) => item.ruleId === 'INV-019')
+    expect(hit?.severities).toBe('info')
+  })
+
+  it('recomputes tax from amount and rate', () => {
+    expect(check(pack, table([row({ taxRate: '13%', tax: '13.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-004')).toBe(false)
+    expect(check(pack, table([row({ taxRate: '13%', tax: '12.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-004')).toBe(true)
+    expect(check(pack, table([row({ taxRate: '免税', tax: '13.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-004')).toBe(false)
+  })
+
+  it('flags a zero tax with a non-exempt rate and a non-zero tax with an exempt rate', () => {
+    expect(check(pack, table([row({ taxRate: '13%', tax: '0.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-012')).toBe(true)
+    expect(check(pack, table([row({ taxRate: '免税', tax: '5.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-012')).toBe(true)
+    expect(check(pack, table([row({ taxRate: '13%', tax: '13.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-012')).toBe(false)
+  })
+})

@@ -183,6 +183,27 @@ export function rescale(value: bigint, from: number, to: number): bigint {
   return negative ? -rounded : rounded
 }
 
+/**
+ * Parse a tax rate cell into a fraction.
+ *
+ * Accepts `13%`, `13％`, `0.13` and `13`; values greater than 1 are treated as
+ * percent, because a VAT rate written as `13` means 13%, not 1300%. Returns
+ * undefined for a missing or non-numeric cell so the caller can skip rather than
+ * guess.
+ */
+function parseRate(text: string): number | undefined {
+  const cleaned = text.replace(/[\s,，%％]/gu, '')
+  if (cleaned === '' || !/^-?\d*(?:\.\d*)?$/u.test(cleaned)) return undefined
+  const value = Number(cleaned)
+  if (!Number.isFinite(value)) return undefined
+  return Math.abs(value) > 1 ? value / 100 : value
+}
+
+/** Normalise a rate label for the exempt/skip vocabularies. */
+function rateLabel(text: string): string {
+  return text.replace(/\s/gu, '').toLowerCase()
+}
+
 /** Normalise a date cell to `YYYY-MM-DD`, or return the raw text. */
 export function normaliseDate(text: string): string {
   const trimmed = text.trim()
@@ -281,6 +302,9 @@ export const IMPLEMENTED = new Set([
   'duplicateAcross',
   'lineTotals',
   'lineMath',
+  'formTotals',
+  'rateEquation',
+  'taxStatus',
   'moneyEquation',
   'partyMatch',
   'partyCompare',
@@ -544,6 +568,115 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
         if (against.includes('history') && rule.check.requireHistory !== true) {
           notes.push(`规则 ${rule.id} 的「历史台账」比对未执行：本版本没有持久化或历史文件入口，只比对了本批次`)
         }
+        continue
+      }
+
+      case 'formTotals': {
+        const formNoField = String(rule.check.formNoField ?? 'formNo')
+        const formAmountField = String(rule.check.formAmountField ?? 'formAmount')
+        const invoiceTotalField = String(rule.check.invoiceTotalField ?? 'total')
+        const nonInvoiceField = String(rule.check.nonInvoiceAmountField ?? 'nonInvoiceAmount')
+        const tolerance = minor(String(rule.check.tolerance ?? 0.01)) ?? 1n
+        const allowPartial = rule.check.allowPartial !== false
+        const partialSeverity = String(rule.check.partialSeverity ?? 'info') as 'error' | 'warn' | 'info'
+        const overSeverity = String(rule.check.overSeverity ?? 'error') as 'error' | 'warn' | 'info'
+
+        const groups = new Map<string, number[]>()
+        rows.forEach((row, index) => {
+          const formNo = cell(row, formNoField)
+          if (formNo === '') return
+          const bucket = groups.get(formNo)
+          if (bucket === undefined) groups.set(formNo, [index])
+          else bucket.push(index)
+        })
+        if (groups.size === 0) {
+          skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `台账没有「${formNoField}」列或该列为空，无法按报销单汇总` })
+          continue
+        }
+        for (const [formNo, indexes] of groups) {
+          const formAmounts = [...new Set(indexes.map((index) => cell(rows[index], formAmountField)).filter((text) => text !== ''))]
+          if (formAmounts.length === 0) {
+            skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `报销单 ${formNo} 没有 ${formAmountField}，本条未执行` })
+            continue
+          }
+          if (formAmounts.length > 1) {
+            push(rule, (indexes[0] ?? 0) + 1, '', `报销单 ${formNo} 的 ${formAmountField} 在多行之间不一致`, formAmounts.join(' / '), '同一报销单只应有一个申报金额', '核对报销单表头')
+            continue
+          }
+          const formAmount = minor(formAmounts[0])
+          if (formAmount === undefined) continue
+          let invoiceTotal = 0n
+          let nonInvoice = 0n
+          let usable = true
+          for (const index of indexes) {
+            const total = minor(cell(rows[index], invoiceTotalField))
+            if (total !== undefined) invoiceTotal += total
+            const extra = minor(cell(rows[index], nonInvoiceField))
+            if (extra !== undefined) nonInvoice = extra
+            if (cell(rows[index], invoiceTotalField) !== '' && total === undefined) usable = false
+          }
+          if (!usable) continue
+          const expected = invoiceTotal + nonInvoice
+          const delta = formAmount - expected
+          if (delta > tolerance) {
+            push(rule, (indexes[0] ?? 0) + 1, '', `报销单 ${formNo} 申报 ${money(formAmount)}，比发票合计 ${money(expected)} 多 ${money(delta)}`, money(formAmount), money(expected), '核对报销单是否含无票补贴；含无票金额请用 nonInvoiceAmount 拆分', overSeverity)
+          } else if (delta < -tolerance) {
+            push(rule, (indexes[0] ?? 0) + 1, '', `报销单 ${formNo} 申报 ${money(formAmount)}，比发票合计 ${money(expected)} 少 ${money(-delta)}`, money(formAmount), money(expected), '核对是否部分报销；部分报销需显式标记', allowPartial ? partialSeverity : overSeverity)
+          }
+        }
+        continue
+      }
+
+      case 'rateEquation': {
+        const amountField = String(rule.check.amountField ?? 'amount')
+        const rateField = String(rule.check.rateField ?? 'taxRate')
+        const taxField = String(rule.check.taxField ?? 'tax')
+        const toleranceAbs = minor(String(rule.check.toleranceAbs ?? 0.01)) ?? 1n
+        const tolerancePct = Number(rule.check.tolerancePct ?? 0.0005)
+        const skipRates = Array.isArray(rule.check.skipRateValues) ? rule.check.skipRateValues.map((value) => rateLabel(String(value))) : []
+        let measured = 0
+        rows.forEach((row, index) => {
+          const rawRate = cell(row, rateField)
+          if (rawRate === '' || skipRates.includes(rateLabel(rawRate))) return
+          const rate = parseRate(rawRate)
+          if (rate === undefined) return
+          const amount = minor(cell(row, amountField))
+          const tax = minor(cell(row, taxField))
+          if (amount === undefined || tax === undefined) return
+          measured += 1
+          const expected = BigInt(Math.round(Number(amount) * rate))
+          const proportional = BigInt(Math.round(Math.abs(Number(amount)) * tolerancePct))
+          const tolerance = toleranceAbs > proportional ? toleranceAbs : proportional
+          const delta = tax - expected
+          const magnitude = delta < 0n ? -delta : delta
+          if (magnitude > tolerance) {
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `税率 ${rawRate} × 金额 ${money(amount)} = 税额 ${money(expected)}，与票面税额 ${money(tax)} 相差 ${money(delta)}`, money(tax), money(expected), '核对税率、金额与税额；多税率、折扣、简易计税、差额征税可能不适用')
+          }
+        })
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: '没有可解析的税率/金额/税额行，本条未执行' })
+        continue
+      }
+
+      case 'taxStatus': {
+        const rateField = String(rule.check.rateField ?? 'taxRate')
+        const taxField = String(rule.check.taxField ?? 'tax')
+        const exemptValues = Array.isArray(rule.check.exemptValues) ? rule.check.exemptValues.map((value) => rateLabel(String(value))) : []
+        const tolerance = minor(String(rule.check.tolerance ?? 0.01)) ?? 1n
+        let measured = 0
+        rows.forEach((row, index) => {
+          const rawRate = cell(row, rateField)
+          if (rawRate === '') return
+          const tax = minor(cell(row, taxField))
+          if (tax === undefined) return
+          measured += 1
+          const exempt = exemptValues.includes(rateLabel(rawRate))
+          if (exempt && (tax > tolerance || tax < -tolerance)) {
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `税率/状态为「${rawRate}」但税额为 ${money(tax)}`, money(tax), '免税/不征税/零税率时税额应为 0', '核对税率与税额；出口/即征即退/差额征税等例外请人工确认')
+          } else if (!exempt && tax === 0n) {
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `税率为「${rawRate}」但税额为 0`, '0.00', '非免税/零税率时税额不应为 0', '核对税率与税额；免税/不征税请用对应状态值')
+          }
+        })
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: '没有可解析的税率/税额行，本条未执行' })
         continue
       }
 
