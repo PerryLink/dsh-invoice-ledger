@@ -258,7 +258,7 @@ describe('report', () => {
     const findingsAt = markdown.indexOf('## 异常清单')
     expect(manualAt).toBeGreaterThan(-1)
     expect(findingsAt === -1 || manualAt < findingsAt).toBe(true)
-    expect(markdown).toContain('人工 4 条')
+    expect(markdown).toContain('人工 2 条')
   })
 })
 
@@ -455,5 +455,30 @@ describe('rate vs item category (INV-011)', () => {
   it('accepts a plausible rate and a small-scale exception', () => {
     expect(check(pack, table([row({ taxRate: '6%', tax: '6.00', total: '106.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-011')).toBe(false)
     expect(check(pack, table([row({ taxRate: '1%', tax: '1.00', total: '101.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-011')).toBe(false)
+  })
+})
+
+describe('file hashes and source links (INV-007 / INV-024)', () => {
+  const row = (extra: Record<string, string> = {}) => ({
+    invoiceNumber: '26141200000000000041', invoiceCode: '4410', issueDate: '2026-10-08',
+    buyerName: '示例科技有限公司', amount: '100.00', tax: '13.00', total: '113.00', ...extra,
+  })
+
+  it('flags one file hash attached to different invoice keys', () => {
+    const result = check(pack, table([
+      row({ invoiceNumber: '26141200000000000041', sha256: 'a'.repeat(64) }),
+      row({ invoiceNumber: '26141200000000000042', sha256: 'a'.repeat(64) }),
+    ]), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-007')).toBe(true)
+  })
+
+  it('flags a missing source file when the column is present', () => {
+    const result = check(pack, table([row({ sourceFile: 'definitely-missing.pdf' })]), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-024')).toBe(true)
+  })
+
+  it('skips the rule when neither hash nor source column is present', () => {
+    const result = check(pack, table([row()]), TODAY)
+    expect(result.skipped.some((item) => item.id === 'INV-007' || item.id === 'INV-024')).toBe(true)
   })
 })

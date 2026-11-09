@@ -11,6 +11,8 @@
  * different invoices look identical.
  */
 
+import { existsSync } from 'node:fs'
+import { dirname, resolve as resolvePath } from 'node:path'
 import type { TableJson } from 'dsh-table-ingest/api'
 import { parseYaml } from './shared/yaml.ts'
 
@@ -313,6 +315,7 @@ export const IMPLEMENTED = new Set([
   'formTotals',
   'rateEquation',
   'rateCategory',
+  'fileLink',
   'ageReminder',
   'numberRange',
   'sequenceRun',
@@ -733,6 +736,53 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
           push(rule, (indexes[0] ?? 0) + 1, '', `同一组（${fields.map((field, i) => `${field}=${values[i]}`).join('、')}）共 ${indexes.length} 张，达到阈值 ${threshold}`, String(indexes.length), `< ${threshold}`, '集中开票可能是月底报销/批量采购/拆分；仅提示，不阻断', severity)
         }
         if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有完整的 ${fields.join('/')} 分组字段，本条未执行` })
+        continue
+      }
+
+      case 'fileLink': {
+        const hashField = String(rule.check.hashField ?? 'sha256')
+        const sourceFileField = String(rule.check.sourceFileField ?? 'sourceFile')
+        const requireEveryRowFile = rule.check.requireEveryRowFile === true
+        const missingSeverity = String(rule.check.missingFileSeverity ?? 'error') as 'error' | 'warn' | 'info'
+        const duplicateSeverity = String(rule.check.duplicateHashSeverity ?? 'info') as 'error' | 'warn' | 'info'
+        const baseDir = dirname(resolvePath(table.target))
+        let measured = 0
+
+        const hashes = new Map<string, { index: number; key: string }[]>()
+        rows.forEach((row, index) => {
+          const hash = cell(row, hashField)
+          if (hash === '') return
+          measured += 1
+          const key = numberKey(row)
+          const bucket = hashes.get(hash)
+          if (bucket === undefined) hashes.set(hash, [{ index, key }])
+          else bucket.push({ index, key })
+        })
+        for (const [hash, entries] of hashes) {
+          const keys = new Set(entries.map((entry) => entry.key))
+          if (keys.size <= 1) continue
+          push(rule, (entries[0]?.index ?? 0) + 1, '', `同一文件哈希出现在 ${keys.size} 个不同发票键下（${hash.slice(0, 12)}…）`, String(keys.size), '1 个文件只归属 1 张发票', '核对是否同一原件被重复挂到多张发票', duplicateSeverity)
+        }
+
+        const hasSourceColumn = rows.some((row) => cell(row, sourceFileField) !== '')
+        if (hasSourceColumn) {
+          rows.forEach((row, index) => {
+            const source = cell(row, sourceFileField)
+            if (source === '') {
+              if (requireEveryRowFile) {
+                measured += 1
+                push(rule, index + 1, cell(row, 'invoiceNumber'), `台账行没有「${sourceFileField}」原件路径`, '(空)', '每行应指向一个原件', '补齐原件路径；确实无原件的行请人工说明', missingSeverity)
+              }
+              return
+            }
+            measured += 1
+            const path = resolvePath(baseDir, source)
+            if (!existsSync(path)) {
+              push(rule, index + 1, cell(row, 'invoiceNumber'), `原件不存在：${source}`, source, '路径应指向存在的文件', '核对原件是否被移动/改名；不要静默当作已归档', missingSeverity)
+            }
+          })
+        }
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `台账没有「${hashField}」哈希，也没有「${sourceFileField}」原件列，本条未执行` })
         continue
       }
 
