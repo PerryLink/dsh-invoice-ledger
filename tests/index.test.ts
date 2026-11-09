@@ -377,3 +377,36 @@ describe('form totals and tax arithmetic (INV-004 / INV-012 / INV-019)', () => {
     expect(check(pack, table([row({ taxRate: '13%', tax: '13.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-012')).toBe(false)
   })
 })
+
+describe('age, numeric range and concentration (INV-015/016/018/023)', () => {
+  const base = (extra: Record<string, string> = {}) => ({
+    invoiceNumber: '26141200000000000021', invoiceCode: '4410', issueDate: '2026-10-08',
+    sellerTaxId: '91440000MA00000001', buyerTaxId: '91440000MA00000002',
+    buyerName: '示例科技有限公司', sellerName: '示例供应商', amount: '100.00', tax: '13.00', total: '113.00',
+    ...extra,
+  })
+
+  it('reminds when an invoice is older than the configured years', () => {
+    const old = check(pack, table([base({ issueDate: '2020-01-01' })]), TODAY)
+    expect(old.findings.some((item) => item.ruleId === 'INV-018')).toBe(true)
+    const fresh = check(pack, table([base()]), TODAY)
+    expect(fresh.findings.some((item) => item.ruleId === 'INV-018')).toBe(false)
+  })
+
+  it('flags zero, unexplained negative and out-of-range values', () => {
+    expect(check(pack, table([base({ total: '0.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-023')).toBe(true)
+    const negative = check(pack, table([base({ total: '-113.00' })]), TODAY)
+    expect(negative.findings.find((item) => item.ruleId === 'INV-023')?.severities).toBe('error')
+    const red = check(pack, table([base({ total: '-113.00', redLetter: 'true' })]), TODAY)
+    expect(red.findings.some((item) => item.ruleId === 'INV-023' && item.message.includes('负数'))).toBe(false)
+    expect(check(pack, table([base({ taxRate: '20%' })]), TODAY).findings.some((item) => item.ruleId === 'INV-023')).toBe(true)
+  })
+
+  it('reports a same-seller same-buyer same-day group at the threshold', () => {
+    const rows = Array.from({ length: 10 }, (_, index) => base({ invoiceNumber: `261412000000000000${10 + index}` }))
+    const result = check(pack, table(rows), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-016')).toBe(true)
+    const below = check(pack, table(rows.slice(0, 9)), TODAY)
+    expect(below.findings.some((item) => item.ruleId === 'INV-016')).toBe(false)
+  })
+})

@@ -37,6 +37,8 @@ export interface LedgerProfile {
   roundingTolerance: number
   lineTolerance: number
   internalSubmitDays: number
+  largeAmountThreshold: number
+  sameSellerDailyThreshold: number
   sequence: { minRun: number; maxGap: number; windowDays: number; highVolumeSellers: string[] }
 }
 
@@ -254,6 +256,8 @@ export function loadPack(yaml: string): LedgerPack {
     roundingTolerance: num(profileRaw.roundingTolerance, 0.02),
     lineTolerance: num(profileRaw.lineTolerance, 0.02),
     internalSubmitDays: num(profileRaw.internalSubmitDays, 90),
+    largeAmountThreshold: num(profileRaw.largeAmountThreshold, 1_000_000),
+    sameSellerDailyThreshold: num(profileRaw.sameSellerDailyThreshold, 10),
     sequence: {
       minRun: num(sequenceRaw.minRun, 3),
       maxGap: num(sequenceRaw.maxGap, 2),
@@ -304,6 +308,9 @@ export const IMPLEMENTED = new Set([
   'lineMath',
   'formTotals',
   'rateEquation',
+  'ageReminder',
+  'numberRange',
+  'groupCount',
   'taxStatus',
   'moneyEquation',
   'partyMatch',
@@ -568,6 +575,90 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
         if (against.includes('history') && rule.check.requireHistory !== true) {
           notes.push(`规则 ${rule.id} 的「历史台账」比对未执行：本版本没有持久化或历史文件入口，只比对了本批次`)
         }
+        continue
+      }
+
+      case 'ageReminder': {
+        const field = String(rule.check.field ?? 'issueDate')
+        const warnAfter = Number(rule.check.warnAfterYears ?? 5)
+        const noteAfter = Number(rule.check.noteAfterYears ?? warnAfter)
+        const message = String(rule.check.message ?? `发票开具已超过 ${warnAfter} 年`)
+        const todayMs = Date.parse(`${today}T00:00:00Z`)
+        const yearMs = 365.25 * 24 * 60 * 60 * 1000
+        let measured = 0
+        rows.forEach((row, index) => {
+          const raw = cell(row, field)
+          if (raw === '') return
+          const date = normaliseDate(raw)
+          const ms = Date.parse(`${date}T00:00:00Z`)
+          if (!Number.isFinite(ms)) return
+          measured += 1
+          const years = (todayMs - ms) / yearMs
+          if (years >= warnAfter) {
+            const severity = years >= Math.max(warnAfter, noteAfter) ? 'info' : 'warn'
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `${message}（开票日期 ${date}，距今约 ${years.toFixed(1)} 年）`, date, `开票未超过 ${warnAfter} 年`, '核对是否仍可在线查验；归档期限与查验期限是两件事', severity)
+          }
+        })
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有可解析的「${field}」日期，本条未执行` })
+        continue
+      }
+
+      case 'numberRange': {
+        const field = String(rule.check.field ?? 'total')
+        const zeroSeverity = String(rule.check.zeroSeverity ?? 'info') as 'error' | 'warn' | 'info'
+        const negativeSeverity = String(rule.check.negativeWithoutRedSeverity ?? 'error') as 'error' | 'warn' | 'info'
+        const largeSeverity = String(rule.check.largeSeverity ?? 'info') as 'error' | 'warn' | 'info'
+        const largeThreshold = rule.check.largeThreshold === undefined || String(rule.check.largeThreshold).includes('${')
+          ? profile.largeAmountThreshold
+          : Number(rule.check.largeThreshold)
+        const rateRange = (rule.check.rateRange ?? {}) as Record<string, unknown>
+        const rateMin = Number(rateRange.min ?? 0)
+        const rateMax = Number(rateRange.max ?? 0.13)
+        const rateSeverity = String(rateRange.severity ?? 'warn') as 'error' | 'warn' | 'info'
+        let measured = 0
+        rows.forEach((row, index) => {
+          const raw = cell(row, field)
+          const total = minor(raw)
+          if (total === undefined) return
+          measured += 1
+          if (total === 0n) {
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `${field} 为 0`, '0.00', '金额应大于 0', '核对是否为空票或录入错误', zeroSeverity)
+          } else if (total < 0n) {
+            const red = cell(row, 'redLetter') !== '' || cell(row, 'isRed') === 'true' || cell(row, 'invoiceType').includes('红')
+            if (!red) push(rule, index + 1, cell(row, 'invoiceNumber'), `${field} 为负数 ${money(total)}，但没有红字标记`, money(total), '负数金额应来自红字发票', '核对红字发票关联；红票优先走 INV-008', negativeSeverity)
+          } else if (largeThreshold > 0 && Number(total) > largeThreshold * 100) {
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `${field} ${money(total)} 超过大额提示阈值 ${largeThreshold}`, money(total), `不超过 ${largeThreshold}`, '大额仅提示，核对合同与审批', largeSeverity)
+          }
+          const rate = parseRate(cell(row, 'taxRate'))
+          if (rate !== undefined && (rate < rateMin || rate > rateMax)) {
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `税率 ${(rate * 100).toFixed(2)}% 超出合理范围 ${rateMin * 100}%–${rateMax * 100}%`, `${(rate * 100).toFixed(2)}%`, `${rateMin * 100}%–${rateMax * 100}%`, '核对税率是否录错；特殊税率请人工确认', rateSeverity)
+          }
+        })
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有可解析的「${field}」金额，本条未执行` })
+        continue
+      }
+
+      case 'groupCount': {
+        const fields = Array.isArray(rule.check.groupBy) ? rule.check.groupBy.map(String) : ['sellerTaxId', 'buyerTaxId', 'issueDate']
+        const threshold = Number(rule.check.threshold ?? profile.sameSellerDailyThreshold)
+        const severity = String(rule.check.severity ?? rule.severity) as 'error' | 'warn' | 'info'
+        const groups = new Map<string, number[]>()
+        rows.forEach((row, index) => {
+          const values = fields.map((field) => cell(row, field))
+          if (values.some((value) => value === '')) return
+          const key = values.join('\u0000')
+          const bucket = groups.get(key)
+          if (bucket === undefined) groups.set(key, [index])
+          else bucket.push(index)
+        })
+        let measured = 0
+        for (const [key, indexes] of groups) {
+          measured += 1
+          if (indexes.length < threshold) continue
+          const values = key.split('\u0000')
+          push(rule, (indexes[0] ?? 0) + 1, '', `同一组（${fields.map((field, i) => `${field}=${values[i]}`).join('、')}）共 ${indexes.length} 张，达到阈值 ${threshold}`, String(indexes.length), `< ${threshold}`, '集中开票可能是月底报销/批量采购/拆分；仅提示，不阻断', severity)
+        }
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有完整的 ${fields.join('/')} 分组字段，本条未执行` })
         continue
       }
 
