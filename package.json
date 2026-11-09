@@ -11,7 +11,11 @@
       "default": "./lib/index.mjs"
     },
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
+    "./icon": "./icon.svg",
+    "./batch": {
+      "types": "./lib/batch.d.mts",
+      "default": "./lib/batch.mjs"
+    }
   },
   "files": [
     "lib",
@@ -30,7 +34,8 @@
     "samples",
     "TROUBLESHOOTING.md",
     "screenshots.json",
-    "capability.json"
+    "capability.json",
+    "bin"
   ],
   "scripts": {
     "build": "tsdown",
@@ -109,5 +114,8 @@
   },
   "dependencies": {
     "dsh-table-ingest": "^0.2.1"
+  },
+  "bin": {
+    "dsh-invoice-batch": "bin/invoice-batch.mjs"
   }
 }
