@@ -312,6 +312,7 @@ export const IMPLEMENTED = new Set([
   'lineMath',
   'formTotals',
   'rateEquation',
+  'rateCategory',
   'ageReminder',
   'numberRange',
   'sequenceRun',
@@ -732,6 +733,37 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
           push(rule, (indexes[0] ?? 0) + 1, '', `同一组（${fields.map((field, i) => `${field}=${values[i]}`).join('、')}）共 ${indexes.length} 张，达到阈值 ${threshold}`, String(indexes.length), `< ${threshold}`, '集中开票可能是月底报销/批量采购/拆分；仅提示，不阻断', severity)
         }
         if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: `没有完整的 ${fields.join('/')} 分组字段，本条未执行` })
+        continue
+      }
+
+      case 'rateCategory': {
+        const itemField = String(rule.check.itemField ?? 'itemName')
+        const rateField = String(rule.check.rateField ?? 'taxRate')
+        const impossibleOnly = rule.check.impossibleOnly !== false
+        const dictionary = Array.isArray(rule.check.dictionary) ? rule.check.dictionary as Record<string, unknown>[] : []
+        const allowed = new Set(
+          [...(Array.isArray(rule.check.allowSmallScale) ? rule.check.allowSmallScale : []), ...(Array.isArray(rule.check.allowSimpleLevy) ? rule.check.allowSimpleLevy : [])]
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value)),
+        )
+        let measured = 0
+        rows.forEach((row, index) => {
+          const item = cell(row, itemField)
+          const rate = parseRate(cell(row, rateField))
+          if (item === '' || rate === undefined) return
+          measured += 1
+          if (allowed.has(rate)) return
+          for (const entry of dictionary) {
+            const keywords = Array.isArray(entry.keywords) ? entry.keywords.map(String) : []
+            if (!keywords.some((keyword) => keyword !== '' && item.includes(keyword))) continue
+            const impossible = Array.isArray(entry.impossible) ? entry.impossible.map((value) => Number(value)) : []
+            if (!impossible.includes(rate)) continue
+            const note = String(entry.note ?? '')
+            push(rule, index + 1, cell(row, 'invoiceNumber'), `「${item}」的税率 ${(rate * 100).toFixed(2)}% 与常见税目不符${note === '' ? '' : `（${note}）`}`, `${(rate * 100).toFixed(2)}%`, '与商品/服务类别匹配的税率', '核对商品名称与税率；小规模/简易计税等例外请人工确认')
+            break
+          }
+        })
+        if (measured === 0) skipped.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: '没有可解析的商品名称/税率行，本条未执行' })
         continue
       }
 

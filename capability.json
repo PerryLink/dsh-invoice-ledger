@@ -13,21 +13,21 @@
   ],
   "rules": {
     "total": 26,
-    "executed": 11,
-    "skipped": 10,
-    "manual": 5,
+    "executed": 13,
+    "skipped": 9,
+    "manual": 4,
     "unsupported": 0,
-    "implemented": 21
+    "implemented": 22
   },
   "benchmark": {
     "kind": "quickstart-sample",
     "corpus_size": 5,
-    "note": "quickstart synthetic CSV runs 11 of 21 implemented rules; 10 skip for missing fields; 5 are manual/external-data; not a real-world P/R",
+    "note": "quickstart synthetic CSV runs 13 of 22 implemented rules; 9 skip for missing fields; 4 are manual/external-data; not a real-world P/R",
     "measured_at": "2026-11-09"
   },
   "limits": [
-    "5 条规则需要附件、红蓝票关联、商品类别或外部数据，归为 manual，不伪装成已执行",
-    "10 条规则因样例缺 taxRate/formNo/明细/分组字段而跳过；跳过不等于通过",
+    "4 条规则需要附件、红蓝票关联或覆盖数据，归为 manual，不伪装成已执行",
+    "9 条规则因样例缺 taxRate/formNo/明细/分组字段而跳过；跳过不等于通过",
     "不判定虚开、不判定业务真实性、不替代税务查验",
     "尚无真实发票语料的 P/R"
   ]

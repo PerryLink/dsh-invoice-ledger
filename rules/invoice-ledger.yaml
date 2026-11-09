@@ -302,7 +302,6 @@ rules:
     params:
       check:
         kind: rateCategory
-        manual: true
         itemField: itemName
         rateField: taxRate
         impossibleOnly: true

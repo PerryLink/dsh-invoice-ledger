@@ -258,7 +258,7 @@ describe('report', () => {
     const findingsAt = markdown.indexOf('## 异常清单')
     expect(manualAt).toBeGreaterThan(-1)
     expect(findingsAt === -1 || manualAt < findingsAt).toBe(true)
-    expect(markdown).toContain('人工 5 条')
+    expect(markdown).toContain('人工 4 条')
   })
 })
 
@@ -437,5 +437,23 @@ describe('consecutive invoice runs (INV-015)', () => {
   it('skips high-volume sellers', () => {
     const rows = ['26141200000000000021', '26141200000000000022', '26141200000000000023'].map((n) => row(n, '中国石化'))
     expect(check(pack, table(rows), TODAY).findings.some((item) => item.ruleId === 'INV-015')).toBe(false)
+  })
+})
+
+describe('rate vs item category (INV-011)', () => {
+  const row = (extra: Record<string, string> = {}) => ({
+    invoiceNumber: '26141200000000000031', invoiceCode: '4410', issueDate: '2026-10-08',
+    buyerName: '示例科技有限公司', itemName: '餐饮服务', amount: '100.00', tax: '13.00', total: '113.00',
+    taxRate: '13%', ...extra,
+  })
+
+  it('flags a rate that is impossible for the declared category', () => {
+    const result = check(pack, table([row()]), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-011')).toBe(true)
+  })
+
+  it('accepts a plausible rate and a small-scale exception', () => {
+    expect(check(pack, table([row({ taxRate: '6%', tax: '6.00', total: '106.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-011')).toBe(false)
+    expect(check(pack, table([row({ taxRate: '1%', tax: '1.00', total: '101.00' })]), TODAY).findings.some((item) => item.ruleId === 'INV-011')).toBe(false)
   })
 })
