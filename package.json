@@ -29,7 +29,8 @@
     "docs/assets/*",
     "samples",
     "TROUBLESHOOTING.md",
-    "screenshots.json"
+    "screenshots.json",
+    "capability.json"
   ],
   "scripts": {
     "build": "tsdown",

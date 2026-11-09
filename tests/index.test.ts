@@ -260,3 +260,83 @@ describe('report', () => {
     expect(markdown).toContain('未执行的规则不等于通过')
   })
 })
+
+describe('line-level arithmetic (INV-013 / INV-014)', () => {
+  const header = { invoiceNumber: '26141200000000000011', invoiceCode: '4410', issueDate: '2026-10-08', buyerName: '示例科技有限公司' }
+
+  it('reports detail lines whose sum does not match the invoice total', () => {
+    const ledger = table([
+      { ...header, lineAmount: '60.00', lineTax: '7.80', amount: '100.00', tax: '13.00', total: '113.00' },
+      { ...header, lineAmount: '50.00', lineTax: '6.50', amount: '100.00', tax: '13.00', total: '113.00' },
+    ])
+    const result = check(pack, ledger, TODAY)
+    const hit = result.findings.find((item) => item.ruleId === 'INV-013')
+    expect(hit).toBeDefined()
+    expect(hit?.message).toContain('100.00')
+    expect(hit?.message).toContain('110.00')
+  })
+
+  it('keeps a matching detail sum quiet and counts the rule as executed', () => {
+    const ledger = table([
+      { ...header, lineAmount: '60.00', lineTax: '7.80', amount: '100.00', tax: '13.00', total: '113.00' },
+      { ...header, lineAmount: '40.00', lineTax: '5.20', amount: '100.00', tax: '13.00', total: '113.00' },
+    ])
+    const result = check(pack, ledger, TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-013')).toBe(false)
+    expect(result.skipped.some((item) => item.id === 'INV-013')).toBe(false)
+  })
+
+  it('skips INV-013 by name when the ledger has no detail columns', () => {
+    const ledger = table([{ ...header, amount: '100.00', tax: '13.00', total: '113.00' }])
+    const result = check(pack, ledger, TODAY)
+    const skip = result.skipped.find((item) => item.id === 'INV-013')
+    expect(skip?.reason).toContain('lineAmount')
+    expect(result.summary.skipped).toBeGreaterThan(0)
+  })
+
+  it('flags quantity times unit price, and rounds the product once', () => {
+    const bad = check(pack, table([
+      { ...header, invoiceNumber: '26141200000000000012', quantity: '2', unitPrice: '3.33', lineAmount: '7.00', unit: '件' },
+    ]), TODAY)
+    expect(bad.findings.some((item) => item.ruleId === 'INV-014')).toBe(true)
+
+    // 0.333 × 3 = 0.999 → 1.00 after one half-up rounding; truncation would say 0.99.
+    const rounded = check(pack, table([
+      { ...header, invoiceNumber: '26141200000000000013', quantity: '0.333', unitPrice: '3', lineAmount: '1.00', unit: '千克' },
+    ]), TODAY)
+    expect(rounded.findings.some((item) => item.ruleId === 'INV-014')).toBe(false)
+  })
+
+  it('skips a line sold by the job rather than inventing a unit price', () => {
+    const result = check(pack, table([
+      { ...header, invoiceNumber: '26141200000000000014', quantity: '1', unitPrice: '999', lineAmount: '500.00', unit: '批' },
+    ]), TODAY)
+    expect(result.findings.some((item) => item.ruleId === 'INV-014')).toBe(false)
+  })
+})
+
+describe('executed / skipped / unsupported partition', () => {
+  it('accounts for every rule in the pack exactly once', () => {
+    const ledger = table([
+      { invoiceNumber: '26141200000000000001', invoiceCode: '', issueDate: '2026-10-08', amount: '100.00', tax: '13.00', total: '113.00', buyerName: '示例科技有限公司' },
+    ])
+    const result = check(pack, ledger, TODAY)
+    expect(result.summary.total).toBe(pack.rules.length)
+    expect(result.summary.executed + result.summary.skipped + result.summary.unsupported).toBe(pack.rules.length)
+    const named = new Set([
+      ...result.unsupported.map((item) => item.id),
+      ...result.skipped.map((item) => item.id),
+    ])
+    for (const rule of pack.rules) {
+      if (named.has(rule.id)) continue
+      expect(result.summary.executed, `${rule.id} 既没执行也没被点名`).toBeGreaterThan(0)
+    }
+  })
+
+  it('never lists the same rule as both skipped and unsupported', () => {
+    const result = check(pack, table([]), TODAY)
+    const skipped = new Set(result.skipped.map((item) => item.id))
+    expect(result.unsupported.some((item) => skipped.has(item.id))).toBe(false)
+    expect(result.summary.executed + result.summary.skipped + result.summary.unsupported).toBe(pack.rules.length)
+  })
+})

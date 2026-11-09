@@ -41,8 +41,19 @@ export function renderMarkdown(result: LedgerResult, source: string, packVersion
   lines.push(
     `- 结果统计：错误 ${result.summary.errors} · 提示 ${result.summary.warnings} · 参考 ${result.summary.infos} · 台账 ${result.summary.rows} 行`,
   )
-  lines.push(`- 已执行规则：${26 - result.unsupported.length} 条 · 未执行 ${result.unsupported.length} 条`)
+  lines.push(
+    `- 规则：共 ${result.summary.total} 条 · 已执行 ${result.summary.executed} 条 · 跳过 ${result.summary.skipped} 条 · 未实现 ${result.summary.unsupported} 条`,
+  )
   lines.push('')
+
+  if (result.skipped.length > 0) {
+    lines.push('## 跳过（有实现但本次没有可核对的数据，不代表通过）')
+    lines.push('')
+    for (const rule of result.skipped) {
+      lines.push(`- \`${rule.id}\` ${rule.title}（${rule.kind}）：${rule.reason}`)
+    }
+    lines.push('')
+  }
 
   if (result.unsupported.length > 0) {
     lines.push('## 未执行的规则（不代表通过）')
@@ -120,8 +131,10 @@ export function buildWorkbook(result: LedgerResult): Buffer {
       ['错误', result.summary.errors],
       ['提示', result.summary.warnings],
       ['参考', result.summary.infos],
-      ['已执行规则', 26 - result.unsupported.length],
-      ['未执行规则', result.unsupported.length],
+      ['规则总数', result.summary.total],
+      ['已执行规则', result.summary.executed],
+      ['跳过规则', result.summary.skipped],
+      ['未实现规则', result.summary.unsupported],
     ],
     widths: [24, 40],
   }
@@ -131,5 +144,11 @@ export function buildWorkbook(result: LedgerResult): Buffer {
     rows: result.unsupported.map((rule) => [rule.id, rule.title, rule.kind]),
     widths: [12, 44, 18],
   }
-  return writeWorkbook([summary, anomaly, unsupported])
+  const skipped: Sheet = {
+    name: '跳过规则',
+    header: ['规则', '标题', '检查类型', '原因'],
+    rows: result.skipped.map((rule) => [rule.id, rule.title, rule.kind, rule.reason]),
+    widths: [12, 40, 16, 60],
+  }
+  return writeWorkbook([summary, anomaly, skipped, unsupported])
 }

@@ -74,11 +74,40 @@ export interface UnsupportedRule {
   kind: string
 }
 
+/**
+ * A rule that ran but had nothing to measure on this ledger.
+ *
+ * Kept separate from `unsupported` and from `findings` because the three states
+ * mean different things: "cannot run at all", "ran and found nothing", and
+ * "ran but the data it needs is absent". Collapsing a skip into a pass is how a
+ * report ends up claiming a check that never happened.
+ */
+export interface SkippedRule {
+  id: string
+  title: string
+  kind: string
+  reason: string
+}
+
 /** The whole result. */
 export interface LedgerResult {
   findings: LedgerFinding[]
   unsupported: UnsupportedRule[]
-  summary: { rows: number; errors: number; warnings: number; infos: number }
+  skipped: SkippedRule[]
+  summary: {
+    rows: number
+    errors: number
+    warnings: number
+    infos: number
+    /** Rules the pack declares. */
+    total: number
+    /** Rules whose check ran to completion (whether or not they found anything). */
+    executed: number
+    /** Rules that ran but had no data to measure. */
+    skipped: number
+    /** Rules with no implementation. */
+    unsupported: number
+  }
   warnings: string[]
 }
 
@@ -114,6 +143,44 @@ export function money(value: bigint, scale = 2): string {
   const negative = value < 0n
   const digits = (negative ? -value : value).toString().padStart(scale + 1, '0')
   return `${negative ? '-' : ''}${digits.slice(0, digits.length - scale)}.${digits.slice(digits.length - scale)}`
+}
+
+/**
+ * Parse a decimal to `scale` places, rounding half away from zero.
+ *
+ * `minor()` truncates, which is right for money already written to two places but
+ * wrong for a quantity of `2.3456` or a unit price: truncating before the
+ * multiplication biases every product downwards and turns a correct invoice into a
+ * finding. This keeps the extra digits, and the rounding happens once, on the
+ * result.
+ *
+ * @param text - e.g. `2.5`, `1,000`, ``.
+ * @param scale - decimal places to keep.
+ * @returns the scaled integer, or undefined when the text is not a number.
+ */
+export function scaled(text: string | undefined, scale: number): bigint | undefined {
+  if (text === undefined) return undefined
+  const cleaned = text.replace(/[\s,，¥￥]/gu, '')
+  if (cleaned === '' || !/^-?\d*(?:\.\d*)?$/u.test(cleaned)) return undefined
+  const negative = cleaned.startsWith('-')
+  const unsigned = negative ? cleaned.slice(1) : cleaned
+  const [whole = '0', frac = ''] = unsigned.split('.')
+  const padded = (frac + '0'.repeat(scale + 1)).slice(0, scale + 1)
+  const keep = padded.slice(0, scale)
+  const next = Number(padded[scale] ?? '0')
+  let value = BigInt(`${whole === '' ? '0' : whole}${keep}`)
+  if (next >= 5) value += 1n
+  return negative ? -value : value
+}
+
+/** Move a scaled integer from one scale to another, rounding half away from zero. */
+export function rescale(value: bigint, from: number, to: number): bigint {
+  if (from === to) return value
+  const factor = 10n ** BigInt(from - to)
+  const negative = value < 0n
+  const magnitude = negative ? -value : value
+  const rounded = (magnitude + factor / 2n) / factor
+  return negative ? -rounded : rounded
 }
 
 /** Normalise a date cell to `YYYY-MM-DD`, or return the raw text. */
@@ -212,8 +279,8 @@ export function loadPack(yaml: string): LedgerPack {
 export const IMPLEMENTED = new Set([
   'invoiceKey',
   'duplicateAcross',
-  'formTotals',
   'lineTotals',
+  'lineMath',
   'moneyEquation',
   'partyMatch',
   'partyCompare',
@@ -315,6 +382,7 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
   const rows = table.rows
   const findings: LedgerFinding[] = []
   const unsupported: UnsupportedRule[] = []
+  const skipped: SkippedRule[] = []
   const notes: string[] = []
   const profile = pack.profile
   const cell = (row: Record<string, string> | undefined, key: string): string => (row?.[key] ?? '').trim()
@@ -475,6 +543,167 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
         }
         if (against.includes('history') && rule.check.requireHistory !== true) {
           notes.push(`规则 ${rule.id} 的「历史台账」比对未执行：本版本没有持久化或历史文件入口，只比对了本批次`)
+        }
+        continue
+      }
+
+      case 'lineTotals': {
+        const groupBy = String(rule.check.groupBy ?? 'invoiceKey')
+        const sumFields = Array.isArray(rule.check.sumFields) ? rule.check.sumFields.map(String) : []
+        const targetFields = Array.isArray(rule.check.targetFields) ? rule.check.targetFields.map(String) : []
+        const tolerance = minor(String(rule.check.tolerance ?? 0.02)) ?? 2n
+        if (groupBy !== 'invoiceKey' || sumFields.length === 0 || sumFields.length !== targetFields.length) {
+          unsupported.push({ id: rule.id, title: rule.title, kind: `${rule.check.kind}（参数不完整）` })
+          continue
+        }
+        // An absent detail column is not a clean bill of health. Report the skip
+        // under its own heading so "no finding" never reads as "checked".
+        const missingFields = sumFields.filter((field) => !rows.some((row) => cell(row, field) !== ''))
+        if (missingFields.length > 0) {
+          skipped.push({
+            id: rule.id,
+            title: rule.title,
+            kind: rule.check.kind,
+            reason: `台账没有明细列 ${missingFields.join('、')}（当前是票面行台账），本规则未执行`,
+          })
+          continue
+        }
+        const lineGroups = new Map<string, number[]>()
+        rows.forEach((row, index) => {
+          const key = numberKey(row)
+          if (key === '|') return
+          const bucket = lineGroups.get(key)
+          if (bucket === undefined) lineGroups.set(key, [index])
+          else bucket.push(index)
+        })
+        let measuredGroups = 0
+        for (const [key, indexes] of lineGroups) {
+          if (indexes.length < 2) continue
+          const invoiceNumber = key.split('|')[1] ?? ''
+          const header: bigint[] = []
+          let usable = true
+          for (const field of targetFields) {
+            const distinct = [...new Set(indexes.map((index) => cell(rows[index], field)).filter((text) => text !== ''))]
+            if (distinct.length === 0) {
+              usable = false
+              break
+            }
+            if (distinct.length > 1) {
+              // The header amount differs between the detail rows of one invoice.
+              // Which one is the real 票面 is not knowable from the ledger, so this
+              // is reported rather than resolved by picking a row.
+              push(
+                rule,
+                (indexes[0] ?? 0) + 1,
+                invoiceNumber,
+                `同一张票的 ${field} 在明细行之间不一致`,
+                distinct.join(' / '),
+                `每行都应是同一个票面 ${field}`,
+                '统一票面金额，或把这张票拆成两张登记',
+              )
+              usable = false
+              break
+            }
+            const value = minor(distinct[0])
+            if (value === undefined) {
+              usable = false
+              break
+            }
+            header.push(value)
+          }
+          if (!usable) continue
+          measuredGroups += 1
+          for (let position = 0; position < sumFields.length; position += 1) {
+            const field = sumFields[position] ?? ''
+            let sum = 0n
+            let complete = true
+            for (const index of indexes) {
+              const value = minor(cell(rows[index], field))
+              if (value === undefined) {
+                complete = false
+                break
+              }
+              sum += value
+            }
+            if (!complete) continue
+            const target = header[position] ?? 0n
+            const delta = sum - target
+            const magnitude = delta < 0n ? -delta : delta
+            if (magnitude > tolerance) {
+              push(
+                rule,
+                (indexes[0] ?? 0) + 1,
+                invoiceNumber,
+                `明细 ${field} 合计 ${money(sum)} 与票面 ${targetFields[position]} ${money(target)} 相差 ${money(delta)}`,
+                money(sum),
+                money(target),
+                '核对明细行；折扣行、多税率、汇总开票、差额征税会不满足本恒等式',
+              )
+            }
+          }
+        }
+        if (measuredGroups === 0) {
+          skipped.push({
+            id: rule.id,
+            title: rule.title,
+            kind: rule.check.kind,
+            reason: '没有同一张票的多行明细（每张票只有一行），明细合计恒等式无可核对',
+          })
+        }
+        continue
+      }
+
+      case 'lineMath': {
+        const leftFields = Array.isArray(rule.check.leftFields) ? rule.check.leftFields.map(String) : []
+        const targetField = String(rule.check.targetField ?? 'lineAmount')
+        if (leftFields.length !== 2) {
+          unsupported.push({ id: rule.id, title: rule.title, kind: `${rule.check.kind}（需要两个乘数）` })
+          continue
+        }
+        const [quantityField = '', unitPriceField = ''] = leftFields
+        const unitField = String(rule.check.unitField ?? 'unit')
+        const taxField = String(rule.check.priceTaxInclusiveField ?? 'priceTaxInclusive')
+        const skipUnits = Array.isArray(rule.check.skipUnits) ? rule.check.skipUnits.map(String) : []
+        const skipIfPriceTaxInclusive = rule.check.skipIfPriceTaxInclusive === true
+        const toleranceAbs = minor(String(rule.check.toleranceAbs ?? 0.01)) ?? 1n
+        const tolerancePct = scaled(String(rule.check.tolerancePct ?? 0.001), 6) ?? 1000n
+        let measuredLines = 0
+        rows.forEach((row, index) => {
+          const quantity = scaled(cell(row, quantityField), 4)
+          const unitPrice = scaled(cell(row, unitPriceField), 4)
+          const amount = minor(cell(row, targetField))
+          if (quantity === undefined || unitPrice === undefined || amount === undefined) return
+          // A unit sold by the batch or by the job has no meaningful 单价×数量.
+          if (skipUnits.includes(cell(row, unitField))) return
+          // Only skip when the ledger actually states the price is tax-inclusive;
+          // `lineAmount` is a 不含税 column elsewhere in this pack, so silence means
+          // "not stated", and treating silence as "含税" would disable the rule.
+          if (skipIfPriceTaxInclusive && /^(true|TRUE|是|含税|1)$/u.test(cell(row, taxField))) return
+          measuredLines += 1
+          const expected = rescale(quantity * unitPrice, 8, 2)
+          const delta = amount - expected
+          const magnitude = delta < 0n ? -delta : delta
+          const proportional = ((amount < 0n ? -amount : amount) * tolerancePct) / 1_000_000n
+          const tolerance = toleranceAbs > proportional ? toleranceAbs : proportional
+          if (magnitude > tolerance) {
+            push(
+              rule,
+              index + 1,
+              cell(row, 'invoiceNumber'),
+              `数量 ${cell(row, quantityField)} × 单价 ${cell(row, unitPriceField)} = ${money(expected)}，与 ${targetField} ${money(amount)} 相差 ${money(delta)}`,
+              money(amount),
+              money(expected),
+              '核对数量、单价与行金额；含税单价、折扣行、多单位会造成差异',
+            )
+          }
+        })
+        if (measuredLines === 0) {
+          skipped.push({
+            id: rule.id,
+            title: rule.title,
+            kind: rule.check.kind,
+            reason: `没有可用的 ${quantityField}/${unitPriceField}/${targetField} 数值或全部被单位规则跳过`,
+          })
         }
         continue
       }
@@ -646,11 +875,17 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
     }
   }
 
+  // Counted from the pack, never hard-coded: a rule added to the YAML must not be
+  // able to sit outside the executed/skipped/unsupported partition.
   const summary = {
     rows: rows.length,
     errors: findings.filter((item) => item.severities === 'error').length,
     warnings: findings.filter((item) => item.severities === 'warn').length,
     infos: findings.filter((item) => item.severities === 'info').length,
+    total: pack.rules.length,
+    executed: pack.rules.length - unsupported.length - skipped.length,
+    skipped: skipped.length,
+    unsupported: unsupported.length,
   }
-  return { findings, unsupported, summary, warnings: [...new Set(notes)] }
+  return { findings, unsupported, skipped, summary, warnings: [...new Set(notes)] }
 }
