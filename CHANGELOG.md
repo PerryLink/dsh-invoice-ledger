@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.6
+
+### Added
+
+- All 26 rule kinds are now implemented: line totals/math, form totals, tax-rate/status/equation, age, numeric range, concentration, consecutive runs, rate-vs-category, file hashes/source links, red-letter linkage and the coverage meta-rule.
+- Folder-level `dsh-invoice-batch` runner; it reuses the single-file rule engine.
+- Execution ledger with separate `executed` / `skipped` / `manual` / `unsupported` counts.
+
+### Changed
+
+- Docs are en/zh only; the batch tool and capability card document the remaining data requirements instead of claiming a pass.
+
 ## Unreleased
 
 ### Fixed

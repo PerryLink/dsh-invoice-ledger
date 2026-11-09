@@ -1,6 +1,6 @@
 {
   "name": "dsh-invoice-ledger",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "核对发票台账：重复报销、价税勾稽、抬头、日期、模板占位符，输出异常清单与规范化台账。",
   "type": "module",
   "main": "lib/index.mjs",
@@ -21,7 +21,7 @@
     "lib",
     "cordis.patch.yml",
     "README.md",
-    "README-zh.md",
+    "README.en.md",
     "locale/*.json",
     "icon.svg",
     "rules",
@@ -60,7 +60,11 @@
       "writes": [],
       "network": false,
       "external": []
-    }
+    },
+    "capabilities": [
+      "tools:register"
+    ],
+    "labels": []
   },
   "keywords": [
     "deepseek-harness",
