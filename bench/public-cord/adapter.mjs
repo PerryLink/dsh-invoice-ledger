@@ -280,7 +280,11 @@ export async function buildBenchmark(options = {}) {
   const records = await loadRecords(join(dataDir, JSONL))
   const selected = selectReceipts(records, limit)
   const imagesDir = join(dataDir, 'images')
-  const useImages = includeImages && existsSync(imagesDir) && selected.every((entry) => existsSync(join(imagesDir, entry.record.image_file)))
+  const imagesPresent = existsSync(imagesDir) && selected.every((entry) => existsSync(join(imagesDir, entry.record.image_file)))
+  if (includeImages && existsSync(imagesDir) && !imagesPresent) {
+    throw new Error(`the image cache at ${imagesDir} is incomplete for the selected receipts; rerun fetch.mjs --force or pass --no-images`)
+  }
+  const useImages = includeImages && imagesPresent
 
   const outDir = options.outDir !== undefined
     ? resolve(options.outDir)

@@ -14,12 +14,14 @@
     "node bench/public-cord/evaluate.mjs --limit 20"
   ],
   "dataset": {
-    "name": "CORD-v2 test split",
+    "name": "CORD-v2",
+    "split": "test",
     "records": 100,
     "selectedReceipts": 20,
     "license": "CC-BY-4.0",
     "attribution": "NAVER Clova / CORD authors (Park et al., CORD: A Consolidated Receipt Dataset for Post-OCR Parsing)",
     "source": "https://huggingface.co/datasets/naver-clova-ix/cord-v2",
+    "mirror": "https://huggingface.co/datasets/Heliosoph/CORD",
     "paper": "https://arxiv.org/abs/2103.10213",
     "files": [
       {
@@ -34,7 +36,7 @@
       }
     ],
     "images": 100,
-    "extraction": "python3 -m zipfile",
+    "extraction": "already extracted",
     "selectedReceiptIds": [
       "cord-test-0005.jpg",
       "cord-test-0007.jpg",
@@ -4901,6 +4903,11 @@
     "skipped": 1020,
     "unsupported": 0,
     "manual": 0,
+    "clean": {
+      "cases": 20,
+      "scored_findings": 0,
+      "unscored_findings": 20
+    },
     "by_rule": [
       {
         "id": "INV-001",

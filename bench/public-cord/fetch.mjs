@@ -10,7 +10,9 @@
  *   1. the files are already in the cache directory (default: ./data);
  *   2. `--from <dir>` (or CORD_SEED_DIR) points at a directory that already
  *      has the two files, e.g. the pre-downloaded /tmp/public-data/cord;
- *   3. `--download` downloads from CORD_JSONL_URL / CORD_IMAGES_URL.
+ *   3. `--download` downloads from CORD_JSONL_URL / CORD_IMAGES_URL, or from the
+ *      public Heliosoph/CORD mirror and then upstream Hugging Face when the env
+ *      vars are unset. Every byte is checked against data.lock.json.
  *
  * Files are verified against data.lock.json (SHA-256 + byte size) unless
  * `--no-verify` is passed. The images are extracted to <data>/images for the
@@ -24,7 +26,7 @@
  */
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
-import { copyFile, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -33,6 +35,16 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const DEFAULT_DATA_DIR = join(HERE, 'data')
 const DEFAULT_SEED_DIR = '/tmp/public-data/cord'
 const FILES = ['cord-test.jsonl.gz', 'cord-test-images.zip']
+const DEFAULT_URLS = {
+  'cord-test.jsonl.gz': [
+    'https://hf-mirror.com/datasets/Heliosoph/CORD/resolve/main/cord-test.jsonl.gz',
+    'https://huggingface.co/datasets/Heliosoph/CORD/resolve/main/cord-test.jsonl.gz',
+  ],
+  'cord-test-images.zip': [
+    'https://hf-mirror.com/datasets/Heliosoph/CORD/resolve/main/cord-test-images.zip',
+    'https://huggingface.co/datasets/Heliosoph/CORD/resolve/main/cord-test-images.zip',
+  ],
+}
 
 function parseArgs(argv) {
   const args = { dataDir: process.env.CORD_DATA_DIR || DEFAULT_DATA_DIR, from: undefined, download: false, force: false, verify: true, extract: true }
@@ -93,7 +105,7 @@ async function verifyFile(name, path, lock, enabled) {
 async function download(url, target) {
   if (url === undefined || url.trim() === '') throw new Error('download requested but the URL is empty')
   console.log(`[fetch] downloading ${url}`)
-  const response = await fetch(url, { redirect: 'follow' })
+  const response = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(120_000) })
   if (!response.ok) throw new Error(`GET ${url} -> HTTP ${response.status} ${response.statusText}`)
   const bytes = Buffer.from(await response.arrayBuffer())
   const partial = `${target}.part`
@@ -110,9 +122,21 @@ async function ensureFile(name, args, lock, used) {
   }
   if (args.download) {
     const envName = name === 'cord-test.jsonl.gz' ? 'CORD_JSONL_URL' : 'CORD_IMAGES_URL'
-    await download(process.env[envName], target)
-    used.push(`download:${envName}`)
-    return target
+    const urls = process.env[envName] !== undefined && process.env[envName].trim() !== ''
+      ? [process.env[envName]]
+      : DEFAULT_URLS[name]
+    let lastError
+    for (const url of urls) {
+      try {
+        await download(url, target)
+        used.push(`download:${url}`)
+        return target
+      } catch (error) {
+        lastError = error
+        console.warn(`[fetch] ${url} failed: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    throw new Error(`could not download ${name}: ${lastError instanceof Error ? lastError.message : String(lastError)}`)
   }
   const seed = args.from || process.env.CORD_SEED_DIR || (existsSync(DEFAULT_SEED_DIR) ? DEFAULT_SEED_DIR : undefined)
   if (seed !== undefined) {

@@ -15,5 +15,7 @@
       "bytes": 20962139,
       "sha256": "f08e97ddab89ba02422948c41289ac4a32221d76cbdd131828e6bc37cdc822d6"
     }
-  }
+  },
+  "mirror": "https://huggingface.co/datasets/Heliosoph/CORD",
+  "mirror_note": "Public reshaped mirror that serves the two exact artifacts; the benchmark downloads and hash-verifies them. Canonical upstream remains naver-clova-ix/cord-v2."
 }

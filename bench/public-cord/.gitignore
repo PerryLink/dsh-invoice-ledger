@@ -1,1 +1,15 @@
+# Downloaded public data (large; never commit)
 data/
+
+# Generated ledgers / workbooks / local inspection output
+out/
+anomalies/
+ledger-*.csv
+cord-*.csv
+cases.json
+fetch-report.json
+summary.local.json
+
+# Local temp output
+tmp/
+.cache/
