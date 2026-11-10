@@ -1,0 +1,4979 @@
+{
+  "schema_version": 1,
+  "benchmark": "public-cord",
+  "plugin": {
+    "name": "dsh-invoice-ledger",
+    "version": "0.1.6",
+    "tool": "invoice_ledger",
+    "packVersion": "2026.1",
+    "entry": "lib/index.mjs"
+  },
+  "today": "2026-11-10",
+  "commands": [
+    "node bench/public-cord/fetch.mjs --from /tmp/public-data/cord",
+    "node bench/public-cord/evaluate.mjs --limit 20"
+  ],
+  "dataset": {
+    "name": "CORD-v2 test split",
+    "records": 100,
+    "selectedReceipts": 20,
+    "license": "CC-BY-4.0",
+    "attribution": "NAVER Clova / CORD authors (Park et al., CORD: A Consolidated Receipt Dataset for Post-OCR Parsing)",
+    "source": "https://huggingface.co/datasets/naver-clova-ix/cord-v2",
+    "paper": "https://arxiv.org/abs/2103.10213",
+    "files": [
+      {
+        "name": "cord-test.jsonl.gz",
+        "bytes": 80827,
+        "sha256": "a2aed84c8b507d68f554def4a60e4749e2c74b64cd40d30cbb50b7c32619f1e2"
+      },
+      {
+        "name": "cord-test-images.zip",
+        "bytes": 20962139,
+        "sha256": "f08e97ddab89ba02422948c41289ac4a32221d76cbdd131828e6bc37cdc822d6"
+      }
+    ],
+    "images": 100,
+    "extraction": "python3 -m zipfile",
+    "selectedReceiptIds": [
+      "cord-test-0005.jpg",
+      "cord-test-0007.jpg",
+      "cord-test-0008.jpg",
+      "cord-test-0016.jpg",
+      "cord-test-0019.jpg",
+      "cord-test-0027.jpg",
+      "cord-test-0029.jpg",
+      "cord-test-0030.jpg",
+      "cord-test-0034.jpg",
+      "cord-test-0042.jpg",
+      "cord-test-0048.jpg",
+      "cord-test-0050.jpg",
+      "cord-test-0056.jpg",
+      "cord-test-0058.jpg",
+      "cord-test-0066.jpg",
+      "cord-test-0072.jpg",
+      "cord-test-0075.jpg",
+      "cord-test-0083.jpg",
+      "cord-test-0085.jpg",
+      "cord-test-0087.jpg"
+    ]
+  },
+  "mapping": {
+    "fields": [
+      {
+        "ledger": "amount",
+        "source": "ground_truth.gt_parse.sub_total.subtotal_price",
+        "transform": "decimal -> integer cents -> 2dp half-up"
+      },
+      {
+        "ledger": "tax",
+        "source": "ground_truth.gt_parse.sub_total.tax_price",
+        "transform": "decimal -> integer cents -> 2dp half-up"
+      },
+      {
+        "ledger": "total",
+        "source": "ground_truth.gt_parse.total.total_price",
+        "transform": "decimal -> integer cents -> 2dp half-up"
+      },
+      {
+        "ledger": "sourceFile",
+        "source": "image_file, extracted from cord-test-images.zip",
+        "transform": "absolute path to the public JPEG; image-derived, not gt_parse"
+      },
+      {
+        "ledger": "sha256",
+        "source": "bytes of that JPEG",
+        "transform": "SHA-256 hex; image-derived, not gt_parse"
+      },
+      {
+        "ledger": "caseId",
+        "source": "benchmark case id",
+        "transform": "synthetic row id, ignored by the plugin; not a CORD field"
+      }
+    ],
+    "absentFields": [
+      "invoiceCode",
+      "invoiceNumber",
+      "docType",
+      "issueDate",
+      "taxRate",
+      "buyerName",
+      "buyerTaxId",
+      "sellerName",
+      "sellerTaxId",
+      "formNo",
+      "formAmount",
+      "reimburser",
+      "remark",
+      "lineAmount",
+      "lineTax",
+      "quantity",
+      "unitPrice",
+      "unit",
+      "isRed",
+      "originalInvoiceNumber",
+      "sha256 (for duplicate-hash detection across invoice keys)"
+    ]
+  },
+  "cases": {
+    "total": 100,
+    "scored": 95,
+    "probes": 5,
+    "byVariant": [
+      {
+        "variant": "clean",
+        "cases": 20
+      },
+      {
+        "variant": "total_mismatch",
+        "cases": 20
+      },
+      {
+        "variant": "missing_total",
+        "cases": 20
+      },
+      {
+        "variant": "zero_total",
+        "cases": 20
+      },
+      {
+        "variant": "negative_total",
+        "cases": 5
+      },
+      {
+        "variant": "missing_tax",
+        "cases": 5
+      },
+      {
+        "variant": "missing_original",
+        "cases": 5
+      },
+      {
+        "variant": "duplicate_probe",
+        "cases": 5
+      }
+    ],
+    "details": [
+      {
+        "caseId": "cord-0005-clean",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-clean",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-clean",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-clean",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-clean",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0027-clean",
+        "receipt": "cord-test-0027.jpg",
+        "receiptIndex": 27,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0029-clean",
+        "receipt": "cord-test-0029.jpg",
+        "receiptIndex": 29,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0030-clean",
+        "receipt": "cord-test-0030.jpg",
+        "receiptIndex": 30,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0034-clean",
+        "receipt": "cord-test-0034.jpg",
+        "receiptIndex": 34,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0042-clean",
+        "receipt": "cord-test-0042.jpg",
+        "receiptIndex": 42,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0048-clean",
+        "receipt": "cord-test-0048.jpg",
+        "receiptIndex": 48,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0050-clean",
+        "receipt": "cord-test-0050.jpg",
+        "receiptIndex": 50,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0056-clean",
+        "receipt": "cord-test-0056.jpg",
+        "receiptIndex": 56,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0058-clean",
+        "receipt": "cord-test-0058.jpg",
+        "receiptIndex": 58,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0066-clean",
+        "receipt": "cord-test-0066.jpg",
+        "receiptIndex": 66,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0072-clean",
+        "receipt": "cord-test-0072.jpg",
+        "receiptIndex": 72,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0075-clean",
+        "receipt": "cord-test-0075.jpg",
+        "receiptIndex": 75,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0083-clean",
+        "receipt": "cord-test-0083.jpg",
+        "receiptIndex": 83,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0085-clean",
+        "receipt": "cord-test-0085.jpg",
+        "receiptIndex": 85,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0087-clean",
+        "receipt": "cord-test-0087.jpg",
+        "receiptIndex": 87,
+        "variant": "clean",
+        "rows": 1,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0005-total_mismatch",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "131.00",
+            "expected": "31.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-total_mismatch",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "111100.00",
+            "expected": "111000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-total_mismatch",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "50100.00",
+            "expected": "50000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-total_mismatch",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "70100.00",
+            "expected": "70000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-total_mismatch",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "176100.00",
+            "expected": "176000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0027-total_mismatch",
+        "receipt": "cord-test-0027.jpg",
+        "receiptIndex": 27,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "61700.00",
+            "expected": "61600.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0029-total_mismatch",
+        "receipt": "cord-test-0029.jpg",
+        "receiptIndex": 29,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "146000.00",
+            "expected": "145900.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0030-total_mismatch",
+        "receipt": "cord-test-0030.jpg",
+        "receiptIndex": 30,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "31600.00",
+            "expected": "31500.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0034-total_mismatch",
+        "receipt": "cord-test-0034.jpg",
+        "receiptIndex": 34,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "193.50",
+            "expected": "93.50"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0042-total_mismatch",
+        "receipt": "cord-test-0042.jpg",
+        "receiptIndex": 42,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "16600.00",
+            "expected": "16500.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0048-total_mismatch",
+        "receipt": "cord-test-0048.jpg",
+        "receiptIndex": 48,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "25100.00",
+            "expected": "25000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0050-total_mismatch",
+        "receipt": "cord-test-0050.jpg",
+        "receiptIndex": 50,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "19600.00",
+            "expected": "19500.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0056-total_mismatch",
+        "receipt": "cord-test-0056.jpg",
+        "receiptIndex": 56,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "9099.00",
+            "expected": "8999.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0058-total_mismatch",
+        "receipt": "cord-test-0058.jpg",
+        "receiptIndex": 58,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "60600.00",
+            "expected": "60500.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0066-total_mismatch",
+        "receipt": "cord-test-0066.jpg",
+        "receiptIndex": 66,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "40100.00",
+            "expected": "40000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0072-total_mismatch",
+        "receipt": "cord-test-0072.jpg",
+        "receiptIndex": 72,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "17600.00",
+            "expected": "17500.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0075-total_mismatch",
+        "receipt": "cord-test-0075.jpg",
+        "receiptIndex": 75,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "282100.00",
+            "expected": "282000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0083-total_mismatch",
+        "receipt": "cord-test-0083.jpg",
+        "receiptIndex": 83,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "23100.00",
+            "expected": "23000.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0085-total_mismatch",
+        "receipt": "cord-test-0085.jpg",
+        "receiptIndex": 85,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "297.45",
+            "expected": "197.45"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0087-total_mismatch",
+        "receipt": "cord-test-0087.jpg",
+        "receiptIndex": 87,
+        "variant": "total_mismatch",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 100.00",
+            "actual": "40250.00",
+            "expected": "40150.00"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0005-missing_total",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "28.18 / 2.82 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-missing_total",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "100909.00 / 10091.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-missing_total",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "45455.00 / 4545.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-missing_total",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "63636.00 / 6364.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-missing_total",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "160000.00 / 16000.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0027-missing_total",
+        "receipt": "cord-test-0027.jpg",
+        "receiptIndex": 27,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "56000.00 / 5600.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0029-missing_total",
+        "receipt": "cord-test-0029.jpg",
+        "receiptIndex": 29,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "132636.00 / 13264.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0030-missing_total",
+        "receipt": "cord-test-0030.jpg",
+        "receiptIndex": 30,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "28636.00 / 2864.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0034-missing_total",
+        "receipt": "cord-test-0034.jpg",
+        "receiptIndex": 34,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "85.00 / 8.50 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0042-missing_total",
+        "receipt": "cord-test-0042.jpg",
+        "receiptIndex": 42,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "15000.00 / 1500.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0048-missing_total",
+        "receipt": "cord-test-0048.jpg",
+        "receiptIndex": 48,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "22728.00 / 2272.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0050-missing_total",
+        "receipt": "cord-test-0050.jpg",
+        "receiptIndex": 50,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "17727.00 / 1773.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0056-missing_total",
+        "receipt": "cord-test-0056.jpg",
+        "receiptIndex": 56,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "8181.00 / 818.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0058-missing_total",
+        "receipt": "cord-test-0058.jpg",
+        "receiptIndex": 58,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "55000.00 / 5500.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0066-missing_total",
+        "receipt": "cord-test-0066.jpg",
+        "receiptIndex": 66,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "36364.00 / 3636.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0072-missing_total",
+        "receipt": "cord-test-0072.jpg",
+        "receiptIndex": 72,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "15909.00 / 1591.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0075-missing_total",
+        "receipt": "cord-test-0075.jpg",
+        "receiptIndex": 75,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "256363.00 / 25637.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0083-missing_total",
+        "receipt": "cord-test-0083.jpg",
+        "receiptIndex": 83,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "20909.00 / 2091.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0085-missing_total",
+        "receipt": "cord-test-0085.jpg",
+        "receiptIndex": 85,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "179.50 / 17.95 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0087-missing_total",
+        "receipt": "cord-test-0087.jpg",
+        "receiptIndex": 87,
+        "variant": "missing_total",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "36500.00 / 3650.00 / ",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 15,
+          "skipped": 11,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019",
+            "INV-023"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0005-zero_total",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -31.00",
+            "actual": "0.00",
+            "expected": "31.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-zero_total",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -111000.00",
+            "actual": "0.00",
+            "expected": "111000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-zero_total",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -50000.00",
+            "actual": "0.00",
+            "expected": "50000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-zero_total",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -70000.00",
+            "actual": "0.00",
+            "expected": "70000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-zero_total",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -176000.00",
+            "actual": "0.00",
+            "expected": "176000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0027-zero_total",
+        "receipt": "cord-test-0027.jpg",
+        "receiptIndex": 27,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -61600.00",
+            "actual": "0.00",
+            "expected": "61600.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0029-zero_total",
+        "receipt": "cord-test-0029.jpg",
+        "receiptIndex": 29,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -145900.00",
+            "actual": "0.00",
+            "expected": "145900.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0030-zero_total",
+        "receipt": "cord-test-0030.jpg",
+        "receiptIndex": 30,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -31500.00",
+            "actual": "0.00",
+            "expected": "31500.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0034-zero_total",
+        "receipt": "cord-test-0034.jpg",
+        "receiptIndex": 34,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -93.50",
+            "actual": "0.00",
+            "expected": "93.50"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0042-zero_total",
+        "receipt": "cord-test-0042.jpg",
+        "receiptIndex": 42,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -16500.00",
+            "actual": "0.00",
+            "expected": "16500.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0048-zero_total",
+        "receipt": "cord-test-0048.jpg",
+        "receiptIndex": 48,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -25000.00",
+            "actual": "0.00",
+            "expected": "25000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0050-zero_total",
+        "receipt": "cord-test-0050.jpg",
+        "receiptIndex": 50,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -19500.00",
+            "actual": "0.00",
+            "expected": "19500.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0056-zero_total",
+        "receipt": "cord-test-0056.jpg",
+        "receiptIndex": 56,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -8999.00",
+            "actual": "0.00",
+            "expected": "8999.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0058-zero_total",
+        "receipt": "cord-test-0058.jpg",
+        "receiptIndex": 58,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -60500.00",
+            "actual": "0.00",
+            "expected": "60500.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0066-zero_total",
+        "receipt": "cord-test-0066.jpg",
+        "receiptIndex": 66,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -40000.00",
+            "actual": "0.00",
+            "expected": "40000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0072-zero_total",
+        "receipt": "cord-test-0072.jpg",
+        "receiptIndex": 72,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -17500.00",
+            "actual": "0.00",
+            "expected": "17500.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0075-zero_total",
+        "receipt": "cord-test-0075.jpg",
+        "receiptIndex": 75,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -282000.00",
+            "actual": "0.00",
+            "expected": "282000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0083-zero_total",
+        "receipt": "cord-test-0083.jpg",
+        "receiptIndex": 83,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -23000.00",
+            "actual": "0.00",
+            "expected": "23000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0085-zero_total",
+        "receipt": "cord-test-0085.jpg",
+        "receiptIndex": 85,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -197.45",
+            "actual": "0.00",
+            "expected": "197.45"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0087-zero_total",
+        "receipt": "cord-test-0087.jpg",
+        "receiptIndex": 87,
+        "variant": "zero_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -40150.00",
+            "actual": "0.00",
+            "expected": "40150.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "info",
+            "row": 1,
+            "message": "total 为 0",
+            "actual": "0.00",
+            "expected": "金额应大于 0"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0005-negative_total",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "negative_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -131.00",
+            "actual": "-100.00",
+            "expected": "31.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "error",
+            "row": 1,
+            "message": "total 为负数 -100.00，但没有红字标记",
+            "actual": "-100.00",
+            "expected": "负数金额应来自红字发票"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-negative_total",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "negative_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -111100.00",
+            "actual": "-100.00",
+            "expected": "111000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "error",
+            "row": 1,
+            "message": "total 为负数 -100.00，但没有红字标记",
+            "actual": "-100.00",
+            "expected": "负数金额应来自红字发票"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-negative_total",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "negative_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -50100.00",
+            "actual": "-100.00",
+            "expected": "50000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "error",
+            "row": 1,
+            "message": "total 为负数 -100.00，但没有红字标记",
+            "actual": "-100.00",
+            "expected": "负数金额应来自红字发票"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-negative_total",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "negative_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -70100.00",
+            "actual": "-100.00",
+            "expected": "70000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "error",
+            "row": 1,
+            "message": "total 为负数 -100.00，但没有红字标记",
+            "actual": "-100.00",
+            "expected": "负数金额应来自红字发票"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-negative_total",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "negative_total",
+        "rows": 1,
+        "expected": [
+          "INV-003",
+          "INV-023"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "total 与 amount + tax 相差 -176100.00",
+            "actual": "-100.00",
+            "expected": "176000.00"
+          },
+          {
+            "ruleId": "INV-023",
+            "severity": "error",
+            "row": 1,
+            "message": "total 为负数 -100.00，但没有红字标记",
+            "actual": "-100.00",
+            "expected": "负数金额应来自红字发票"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1,
+          "INV-023": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0005-missing_tax",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "missing_tax",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "28.18 /  / 31.00",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-missing_tax",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "missing_tax",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "100909.00 /  / 111000.00",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-missing_tax",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "missing_tax",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "45455.00 /  / 50000.00",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-missing_tax",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "missing_tax",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "63636.00 /  / 70000.00",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-missing_tax",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "missing_tax",
+        "rows": 1,
+        "expected": [
+          "INV-003"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-003",
+            "severity": "error",
+            "row": 1,
+            "message": "金额列不是可比较的数字",
+            "actual": "160000.00 /  / 176000.00",
+            "expected": "数字"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-003": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0005-missing_original",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "missing_original",
+        "rows": 1,
+        "expected": [
+          "INV-007",
+          "INV-024"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-007",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0005.jpg",
+            "actual": "<cord-images>/missing-cord-test-0005.jpg",
+            "expected": "路径应指向存在的文件"
+          },
+          {
+            "ruleId": "INV-024",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0005.jpg",
+            "actual": "<cord-images>/missing-cord-test-0005.jpg",
+            "expected": "路径应指向存在的文件"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-007": 1,
+          "INV-024": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-missing_original",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "missing_original",
+        "rows": 1,
+        "expected": [
+          "INV-007",
+          "INV-024"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-007",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0007.jpg",
+            "actual": "<cord-images>/missing-cord-test-0007.jpg",
+            "expected": "路径应指向存在的文件"
+          },
+          {
+            "ruleId": "INV-024",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0007.jpg",
+            "actual": "<cord-images>/missing-cord-test-0007.jpg",
+            "expected": "路径应指向存在的文件"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-007": 1,
+          "INV-024": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-missing_original",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "missing_original",
+        "rows": 1,
+        "expected": [
+          "INV-007",
+          "INV-024"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-007",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0008.jpg",
+            "actual": "<cord-images>/missing-cord-test-0008.jpg",
+            "expected": "路径应指向存在的文件"
+          },
+          {
+            "ruleId": "INV-024",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0008.jpg",
+            "actual": "<cord-images>/missing-cord-test-0008.jpg",
+            "expected": "路径应指向存在的文件"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-007": 1,
+          "INV-024": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-missing_original",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "missing_original",
+        "rows": 1,
+        "expected": [
+          "INV-007",
+          "INV-024"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-007",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0016.jpg",
+            "actual": "<cord-images>/missing-cord-test-0016.jpg",
+            "expected": "路径应指向存在的文件"
+          },
+          {
+            "ruleId": "INV-024",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0016.jpg",
+            "actual": "<cord-images>/missing-cord-test-0016.jpg",
+            "expected": "路径应指向存在的文件"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-007": 1,
+          "INV-024": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-missing_original",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "missing_original",
+        "rows": 1,
+        "expected": [
+          "INV-007",
+          "INV-024"
+        ],
+        "actual": [
+          {
+            "ruleId": "INV-007",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0019.jpg",
+            "actual": "<cord-images>/missing-cord-test-0019.jpg",
+            "expected": "路径应指向存在的文件"
+          },
+          {
+            "ruleId": "INV-024",
+            "severity": "error",
+            "row": 1,
+            "message": "原件不存在：<cord-images>/missing-cord-test-0019.jpg",
+            "actual": "<cord-images>/missing-cord-test-0019.jpg",
+            "expected": "路径应指向存在的文件"
+          }
+        ],
+        "raw_findings_by_rule": {
+          "INV-001": 1,
+          "INV-007": 1,
+          "INV-024": 1
+        },
+        "probe": null,
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0005-duplicate_probe",
+        "receipt": "cord-test-0005.jpg",
+        "receiptIndex": 5,
+        "variant": "duplicate_probe",
+        "rows": 2,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 2
+        },
+        "probe": {
+          "ruleId": "INV-005",
+          "status": "unscorable",
+          "detected": false,
+          "findings": []
+        },
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0007-duplicate_probe",
+        "receipt": "cord-test-0007.jpg",
+        "receiptIndex": 7,
+        "variant": "duplicate_probe",
+        "rows": 2,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 2
+        },
+        "probe": {
+          "ruleId": "INV-005",
+          "status": "unscorable",
+          "detected": false,
+          "findings": []
+        },
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0008-duplicate_probe",
+        "receipt": "cord-test-0008.jpg",
+        "receiptIndex": 8,
+        "variant": "duplicate_probe",
+        "rows": 2,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 2
+        },
+        "probe": {
+          "ruleId": "INV-005",
+          "status": "unscorable",
+          "detected": false,
+          "findings": []
+        },
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0016-duplicate_probe",
+        "receipt": "cord-test-0016.jpg",
+        "receiptIndex": 16,
+        "variant": "duplicate_probe",
+        "rows": 2,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 2
+        },
+        "probe": {
+          "ruleId": "INV-005",
+          "status": "unscorable",
+          "detected": false,
+          "findings": []
+        },
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      },
+      {
+        "caseId": "cord-0019-duplicate_probe",
+        "receipt": "cord-test-0019.jpg",
+        "receiptIndex": 19,
+        "variant": "duplicate_probe",
+        "rows": 2,
+        "expected": [],
+        "actual": [],
+        "raw_findings_by_rule": {
+          "INV-001": 2
+        },
+        "probe": {
+          "ruleId": "INV-005",
+          "status": "unscorable",
+          "detected": false,
+          "findings": []
+        },
+        "plugin": {
+          "executed": 16,
+          "skipped": 10,
+          "unsupported": 0,
+          "skippedRules": [
+            "INV-004",
+            "INV-008",
+            "INV-011",
+            "INV-012",
+            "INV-013",
+            "INV-014",
+            "INV-015",
+            "INV-016",
+            "INV-018",
+            "INV-019"
+          ]
+        }
+      }
+    ]
+  },
+  "rules": [
+    {
+      "id": "INV-001",
+      "title": "票种与发票号码/代码格式应匹配",
+      "provided": false,
+      "finding_cases": 100,
+      "finding_instances": 105,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-002",
+      "title": "开票日期应可解析且不在未来",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-003",
+      "title": "价税合计应等于金额与税额之和",
+      "provided": true,
+      "finding_cases": 70,
+      "finding_instances": 70,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-004",
+      "title": "税率与金额、税额应自洽",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-005",
+      "title": "同一张发票在本次台账内只能出现一次",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-006",
+      "title": "同一张发票不得跨报销单或历史重复报销",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-007",
+      "title": "同一文件不应重复上传",
+      "provided": "image",
+      "finding_cases": 5,
+      "finding_instances": 5,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-008",
+      "title": "红字发票应与蓝字发票关联且累计不超蓝票金额",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-009",
+      "title": "购方名称与税号应与本公司（或白名单实体）一致",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-010",
+      "title": "销方名称与税号应完整、格式合法",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-011",
+      "title": "税率应与货物或服务类别大体匹配",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-012",
+      "title": "免税、不征税、零税率应与税额为零一致",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-013",
+      "title": "明细行金额与税额合计应与票面一致",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-014",
+      "title": "数量乘单价应与行金额一致",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-015",
+      "title": "同一销方对同一购方的连号发票应提示抽查",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-016",
+      "title": "同一销方同日对同一购方集中开票应提示抽查",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-017",
+      "title": "开票日期与所属期、合同、报销时点应大体合理",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-018",
+      "title": "超过 5 年的发票无法在线查验；会计凭证归档至少 30 年",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-019",
+      "title": "报销单申报金额应与发票合计一致",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 100,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 0
+    },
+    {
+      "id": "INV-020",
+      "title": "同一张发票跨多张报销单或拆分报销应显式标记",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-021",
+      "title": "个人抬头发票应确认是否属于可报销类别",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-022",
+      "title": "购销方相同应提示核实",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-023",
+      "title": "金额与税率应在合理范围",
+      "provided": true,
+      "finding_cases": 25,
+      "finding_instances": 25,
+      "skipped_cases": 20,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 80
+    },
+    {
+      "id": "INV-024",
+      "title": "台账行应有原件，输入文件应有归属",
+      "provided": "image",
+      "finding_cases": 5,
+      "finding_instances": 5,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-025",
+      "title": "台账不应残留模板占位符或示例数据",
+      "provided": false,
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    },
+    {
+      "id": "INV-026",
+      "title": "规则执行覆盖情况应可审计",
+      "provided": "meta",
+      "finding_cases": 0,
+      "finding_instances": 0,
+      "skipped_cases": 0,
+      "unsupported_cases": 0,
+      "manual_cases": 0,
+      "executed_cases": 100
+    }
+  ],
+  "scored_rules": [
+    {
+      "id": "INV-003",
+      "title": "价税合计应等于金额与税额之和",
+      "field_source": "CORD money fields",
+      "positives": 70,
+      "tp": 70,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1,
+      "recall": 1,
+      "label_source": "CORD",
+      "note": "The arithmetic identity is tested on CORD money values; discounts/service lines are excluded by receipt selection."
+    },
+    {
+      "id": "INV-007",
+      "title": "同一文件不应重复上传",
+      "field_source": "image-derived sourceFile",
+      "positives": 5,
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "tn": 90,
+      "precision": 1,
+      "recall": 1,
+      "label_source": "image",
+      "note": "The shipped fileLink check also verifies sourceFile existence, so this rule fires on the missing-original variant alongside INV-024. Labels follow the shipped behavior."
+    },
+    {
+      "id": "INV-023",
+      "title": "金额与税率应在合理范围",
+      "field_source": "CORD total",
+      "positives": 25,
+      "tp": 25,
+      "fp": 0,
+      "fn": 0,
+      "tn": 70,
+      "precision": 1,
+      "recall": 1,
+      "label_source": "CORD",
+      "note": "Only the total branch is measured; CORD has no taxRate. The large-amount branch is not tested because the profile threshold is CNY and CORD amounts are IDR."
+    },
+    {
+      "id": "INV-024",
+      "title": "台账行应有原件，输入文件应有归属",
+      "field_source": "image-derived sourceFile",
+      "positives": 5,
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "tn": 90,
+      "precision": 1,
+      "recall": 1,
+      "label_source": "image",
+      "note": "The missing-original variant is synthetic; the clean variants use the real public JPEG."
+    }
+  ],
+  "excluded_rules": [
+    {
+      "id": "INV-001",
+      "title": "票种与发票号码/代码格式应匹配",
+      "provided": false,
+      "reason": "CORD gt_parse has no invoiceCode/invoiceNumber/docType. The shipped check still emits 发票号码为空 for every row; that is an absence signal, not a CORD defect."
+    },
+    {
+      "id": "INV-002",
+      "title": "开票日期应可解析且不在未来",
+      "provided": false,
+      "reason": "CORD gt_parse has no issueDate."
+    },
+    {
+      "id": "INV-004",
+      "title": "税率与金额、税额应自洽",
+      "provided": false,
+      "reason": "CORD gt_parse has no taxRate."
+    },
+    {
+      "id": "INV-005",
+      "title": "同一张发票在本次台账内只能出现一次",
+      "provided": false,
+      "reason": "CORD has no invoiceCode/invoiceNumber. A duplicated row is an unscorable probe, not an INV-005 score."
+    },
+    {
+      "id": "INV-006",
+      "title": "同一张发票不得跨报销单或历史重复报销",
+      "provided": false,
+      "reason": "CORD has no invoiceCode/invoiceNumber, formNo or history file."
+    },
+    {
+      "id": "INV-008",
+      "title": "红字发票应与蓝字发票关联且累计不超蓝票金额",
+      "provided": false,
+      "reason": "CORD gt_parse has no isRed, originalInvoiceNumber or red-letter marker."
+    },
+    {
+      "id": "INV-009",
+      "title": "购方名称与税号应与本公司（或白名单实体）一致",
+      "provided": false,
+      "reason": "CORD gt_parse has no buyerName/buyerTaxId."
+    },
+    {
+      "id": "INV-010",
+      "title": "销方名称与税号应完整、格式合法",
+      "provided": false,
+      "reason": "CORD gt_parse has no sellerName/sellerTaxId."
+    },
+    {
+      "id": "INV-011",
+      "title": "税率应与货物或服务类别大体匹配",
+      "provided": false,
+      "reason": "CORD gt_parse has no itemName/taxRate pair for this check."
+    },
+    {
+      "id": "INV-012",
+      "title": "免税、不征税、零税率应与税额为零一致",
+      "provided": false,
+      "reason": "CORD gt_parse has no taxRate/免税 status."
+    },
+    {
+      "id": "INV-013",
+      "title": "明细行金额与税额合计应与票面一致",
+      "provided": false,
+      "reason": "CORD menu lines are not mapped to the ledger detail-row shape; there is no lineTax."
+    },
+    {
+      "id": "INV-014",
+      "title": "数量乘单价应与行金额一致",
+      "provided": false,
+      "reason": "CORD menu quantity/price are line-level and are not mapped into the invoice-row quantity/unitPrice/lineAmount shape."
+    },
+    {
+      "id": "INV-015",
+      "title": "同一销方对同一购方的连号发票应提示抽查",
+      "provided": false,
+      "reason": "CORD has no sellerTaxId/buyerTaxId/issueYear or invoice number."
+    },
+    {
+      "id": "INV-016",
+      "title": "同一销方同日对同一购方集中开票应提示抽查",
+      "provided": false,
+      "reason": "CORD has no sellerTaxId/buyerTaxId/issueDate."
+    },
+    {
+      "id": "INV-017",
+      "title": "开票日期与所属期、合同、报销时点应大体合理",
+      "provided": false,
+      "reason": "CORD has no issueDate, period or contract date."
+    },
+    {
+      "id": "INV-018",
+      "title": "超过 5 年的发票无法在线查验；会计凭证归档至少 30 年",
+      "provided": false,
+      "reason": "CORD has no issueDate."
+    },
+    {
+      "id": "INV-019",
+      "title": "报销单申报金额应与发票合计一致",
+      "provided": false,
+      "reason": "CORD has no formNo/formAmount."
+    },
+    {
+      "id": "INV-020",
+      "title": "同一张发票跨多张报销单或拆分报销应显式标记",
+      "provided": false,
+      "reason": "CORD has no invoice key or formNo."
+    },
+    {
+      "id": "INV-021",
+      "title": "个人抬头发票应确认是否属于可报销类别",
+      "provided": false,
+      "reason": "CORD has no buyerName/docType."
+    },
+    {
+      "id": "INV-022",
+      "title": "购销方相同应提示核实",
+      "provided": false,
+      "reason": "CORD has no buyerTaxId/sellerTaxId."
+    },
+    {
+      "id": "INV-025",
+      "title": "台账不应残留模板占位符或示例数据",
+      "provided": false,
+      "reason": "CORD has no buyerName/sellerName/invoiceNumber/remark."
+    },
+    {
+      "id": "INV-026",
+      "title": "规则执行覆盖情况应可审计",
+      "provided": "meta",
+      "reason": "Coverage meta-rule. It runs and stays silent when every rule is accounted for; it has no CORD defect to detect."
+    }
+  ],
+  "probes": [
+    {
+      "ruleId": "INV-005",
+      "status": "unscorable",
+      "cases": 5,
+      "detectedCases": 0,
+      "reason": "CORD provides no invoiceCode/invoiceNumber; the plugin keys rows as \"|\" and uniqueInvoice silently skips them, so a duplicated row cannot be scored against INV-005."
+    }
+  ],
+  "raw": {
+    "cases": 100,
+    "rows": 105,
+    "findings": 210,
+    "errors": 85,
+    "warnings": 105,
+    "infos": 20,
+    "executed": 1580,
+    "skipped": 1020,
+    "unsupported": 0,
+    "manual": 0,
+    "by_rule": [
+      {
+        "id": "INV-001",
+        "title": "票种与发票号码/代码格式应匹配",
+        "findings": 105,
+        "scored": false
+      },
+      {
+        "id": "INV-003",
+        "title": "价税合计应等于金额与税额之和",
+        "findings": 70,
+        "scored": true
+      },
+      {
+        "id": "INV-007",
+        "title": "同一文件不应重复上传",
+        "findings": 5,
+        "scored": true
+      },
+      {
+        "id": "INV-023",
+        "title": "金额与税率应在合理范围",
+        "findings": 25,
+        "scored": true
+      },
+      {
+        "id": "INV-024",
+        "title": "台账行应有原件，输入文件应有归属",
+        "findings": 5,
+        "scored": true
+      }
+    ],
+    "plugin_summary": {
+      "rule_count": 26,
+      "total_rule_instances": 2600,
+      "executed_instances": 1580,
+      "skipped_instances": 1020,
+      "unsupported_instances": 0,
+      "manual_instances": 0,
+      "executed_min": 15,
+      "executed_max": 16,
+      "skipped_min": 10,
+      "skipped_max": 11
+    }
+  },
+  "coverage_observation": {
+    "silent_rules": [
+      "INV-001",
+      "INV-002",
+      "INV-005",
+      "INV-006",
+      "INV-009",
+      "INV-010",
+      "INV-017",
+      "INV-020",
+      "INV-021",
+      "INV-022",
+      "INV-025"
+    ],
+    "note": "Rules with provided=false, zero skipped entries and zero unsupported entries were counted as executed by the plugin even though no required field was present. INV-001 also has no data but still emits an absence finding.",
+    "absence_finding_rules": [
+      "INV-001"
+    ]
+  },
+  "limitations": [
+    "CORD-v2 is an Indonesian receipt dataset, not a Chinese VAT invoice corpus. Its gt_parse has menu lines, sub_total and total only: no invoice code/number, issue date, buyer, seller, tax rate, form number, reimburser, remark, red-letter marker or line tax. Rules needing those fields are marked not provided and excluded from P/R; no values were invented.",
+    "Only 20 of 100 test receipts were selected, and they are the first receipts for which all three money fields exist and |amount + tax - total| <= 0.02 after 2-decimal rounding. Selection is about arithmetic consistency, not about invoice semantics.",
+    "CORD has three-decimal money in some receipts and IDR amounts while the shipped rule pack profile is CNY. The adapter normalises values to 2-decimal cents; the plugin does not use the currency field, so only numeric branches are exercised. The large-amount branch (1,000,000) is not tested because it would be meaningless for IDR amounts.",
+    "sourceFile and sha256 are derived from the public JPEGs, not from gt_parse. The missing-original variant is synthetic. The shipped fileLink check verifies sourceFile existence in both INV-007 and INV-024, so both are labelled for that defect.",
+    "INV-001 emits 发票号码为空 for every CORD row because CORD has no invoice number. Those findings are reported in the raw output but are not a labelled CORD defect and are excluded from P/R.",
+    "The duplicate probe duplicates a clean row, but INV-005 cannot detect it: the plugin keys rows as \"|\" when invoiceCode/invoiceNumber are absent. The probe is reported as unscorable, not as a plugin pass or fail.",
+    "CORD has no date at all, so future-date and age/period rules (INV-002, INV-017, INV-018) cannot be scored and no date was fabricated.",
+    "The plugin reports some rules as executed even when their required fields are blank (see coverage observation). \"executed\" is not evidence that a rule was measured on this corpus.",
+    "This benchmark measures the rule engine on gold annotations, not OCR/extraction quality. It also does not test the plugin workbook or markdown rendering beyond the tool call succeeding."
+  ]
+}

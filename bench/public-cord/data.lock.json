@@ -1,0 +1,19 @@
+{
+  "dataset": "naver-clova-ix/cord-v2",
+  "split": "test",
+  "license": "CC-BY-4.0",
+  "attribution": "NAVER Clova / CORD authors (Park et al., CORD: A Consolidated Receipt Dataset for Post-OCR Parsing)",
+  "source": "https://huggingface.co/datasets/naver-clova-ix/cord-v2",
+  "paper": "https://arxiv.org/abs/2103.10213",
+  "note": "Prepared artifacts used by this benchmark: cord-test.jsonl.gz has one JSON object per line (image_file, width, height, ground_truth including gt_parse and OCR lines); cord-test-images.zip has the 100 test JPEGs. Derived from the CORD-v2 test split. The files are not committed; fetch.mjs obtains and verifies them.",
+  "files": {
+    "cord-test.jsonl.gz": {
+      "bytes": 80827,
+      "sha256": "a2aed84c8b507d68f554def4a60e4749e2c74b64cd40d30cbb50b7c32619f1e2"
+    },
+    "cord-test-images.zip": {
+      "bytes": 20962139,
+      "sha256": "f08e97ddab89ba02422948c41289ac4a32221d76cbdd131828e6bc37cdc822d6"
+    }
+  }
+}
