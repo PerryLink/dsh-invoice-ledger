@@ -430,8 +430,16 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
   const notes: string[] = []
   const profile = pack.profile
   const cell = (row: Record<string, string> | undefined, key: string): string => (row?.[key] ?? '').trim()
-  const numberKey = (row: Record<string, string> | undefined): string =>
-    `${cell(row, 'invoiceCode')}|${cell(row, 'invoiceNumber')}`
+  const numberKey = (row: Record<string, string> | undefined): string => {
+    const code = cell(row, 'invoiceCode')
+    const number = cell(row, 'invoiceNumber')
+    if (code !== '' || number !== '') return `${code}|${number}`
+    // A ledger without invoice numbers still has an original-file identity.
+    // Falling back to it lets the duplicate check catch a duplicated receipt
+    // instead of silently keying every such row as the same empty invoice.
+    const source = cell(row, 'sourceFile') || cell(row, 'sha256')
+    return source === '' ? '|' : `file|${source}`
+  }
 
   for (const rule of pack.rules) {
     if (rule.check.manual === true) {
