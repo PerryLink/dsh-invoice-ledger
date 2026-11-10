@@ -441,11 +441,34 @@ export function check(pack: LedgerPack, table: TableJson, today: string): Ledger
     return source === '' ? '|' : `file|${source}`
   }
 
+  const available = new Set([...table.columns, ...Object.keys(table.header)])
+  const declaredFields = (check: Record<string, unknown>): string[] => {
+    const out = new Set<string>()
+    for (const [key, value] of Object.entries(check)) {
+      if (!/^(field|fields|left|right|target|.*Field)$/u.test(key)) continue
+      if (typeof value === 'string' && value !== '') out.add(value)
+      else if (Array.isArray(value)) for (const item of value) if (typeof item === 'string' && item !== '') out.add(item)
+    }
+    return [...out]
+  }
+
   for (const rule of pack.rules) {
     if (rule.check.manual === true) {
       manual.push({ id: rule.id, title: rule.title, kind: rule.check.kind, reason: '需要外部数据或人工核验，本工具不执行' })
     } else if (!IMPLEMENTED.has(rule.check.kind)) {
       unsupported.push({ id: rule.id, title: rule.title, kind: rule.check.kind })
+    } else {
+      const requiredFields = declaredFields(rule.check)
+      const hasNumberFallback = rule.id === 'INV-005' && (available.has('sourceFile') || available.has('sha256'))
+      if (requiredFields.length > 0 && !hasNumberFallback && !requiredFields.some((field) => available.has(field))) {
+        skipped.push({
+          id: rule.id,
+          title: rule.title,
+          kind: rule.check.kind,
+          reason: `台账没有规则所需的任一字段（${requiredFields.join('、')}），本条未执行`,
+        })
+        continue
+      }
     }
   }
 
