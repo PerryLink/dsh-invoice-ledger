@@ -1,0 +1,30 @@
+{
+  "dataset": "SROIE receipt keys (MIT)",
+  "source": "https://github.com/zzzDavid/ICDAR-2019-SROIE",
+  "license": "MIT",
+  "rows": 3,
+  "generatedAt": "2026-11-10T13:05:25.835Z",
+  "byRule": {
+    "INV-002": {
+      "tp": 6,
+      "fp": 0,
+      "fn": 0,
+      "tn": 9,
+      "precision": 1,
+      "recall": 1
+    },
+    "INV-023": {
+      "tp": 6,
+      "fp": 0,
+      "fn": 0,
+      "tn": 9,
+      "precision": 1,
+      "recall": 1
+    }
+  },
+  "limitations": [
+    "SROIE has no invoice code/number, tax amount, tax rate, buyer or line items; those rules are excluded.",
+    "SROIE receipts are Malaysian, not Chinese VAT invoices.",
+    "The date/amount defects are injected; clean rows are real public annotations."
+  ]
+}
