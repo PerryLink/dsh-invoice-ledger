@@ -44,6 +44,11 @@ dsh plugin --profile <name> add dsh-invoice-ledger
   <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="dsh-invoice-ledger संरचना: बही फ़ाइल और 26 नियमों का पैक invoice_ledger गेट में मिलते हैं, जो params.check.kind से वितरित करता है; लागू चैनल (12 नियम) 3 पंक्ति-स्तरीय अंतर देता है, अनुपयोगी चैनल 14 नियम आईडी और प्रकार सूचीबद्ध करता है, और दोनों चैनल Markdown रिपोर्ट (पहले अनुपयोगी, फिर अंतर) और तीन-शीट वर्कबुक पर फिर मिलते हैं">
 </picture>
 
+![dsh-invoice-ledger का असली टर्मिनल रन](docs/assets/dsh-invoice-ledger-demo.gif)
+
+*इस रिपॉज़िटरी में दर्ज असली रन का एनिमेटेड रीप्ले।*
+
+
 ## तीन चरणों में शुरुआत
 
 1. **इंस्टॉल करें** (कोई एक चैनल चुनें):

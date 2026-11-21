@@ -44,6 +44,11 @@ Hay dos decisiones deliberadas. Un duplicado se identifica por **código + núme
   <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="Estructura de dsh-invoice-ledger: el archivo del libro y el paquete de 26 reglas confluyen en la puerta invoice_ledger, que despacha por params.check.kind; el canal ejecutado (12 reglas) produce 3 hallazgos por fila, el canal no ejecutado lista 14 id de regla con su tipo, y ambos canales vuelven a confluir en el informe Markdown (primero lo no ejecutado, luego los hallazgos) y en el libro de tres hojas">
 </picture>
 
+![dsh-invoice-ledger: ejecución real de terminal](docs/assets/dsh-invoice-ledger-demo.gif)
+
+*Repetición animada de una ejecución real registrada en este repositorio.*
+
+
 ## Instalación en tres pasos
 
 1. **Instalar** (elige un canal):

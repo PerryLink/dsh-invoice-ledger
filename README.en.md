@@ -44,6 +44,11 @@ Two things are deliberate. A duplicate is keyed on **invoice code + number, neve
   <img src="docs/assets/dsh-invoice-ledger-flow-v5-light.svg" width="100%" alt="dsh-invoice-ledger structure: the ledger file and the 26-rule pack merge into the invoice_ledger gate, which dispatches by params.check.kind; the executed channel (12 rules) yields 3 row-level findings, the not-executed channel lists 14 rule ids by id and kind, and both channels re-converge on the markdown report (not executed first, then findings) and the three-sheet workbook">
 </picture>
 
+![dsh-invoice-ledger: real terminal run](docs/assets/dsh-invoice-ledger-demo.gif)
+
+*Animated replay of a real run recorded in this repository.*
+
+
 ## Three-step setup
 
 1. **Install** (pick one channel):
