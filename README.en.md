@@ -7,6 +7,8 @@
 
 # dsh-invoice-ledger
 
+Current version `0.1.8`.
+
 **Check the whole invoice ledger before it is booked — every difference points at a row and carries its basis.**
 
 An invoice-ledger checker plugin for DeepSeek Harness, built for finance and reimbursement reviewers: it reads one ledger and checks duplicate claims, arithmetic, buyer identity, dates and template placeholders, then returns an anomaly list plus a three-sheet workbook. It never modifies the original, never goes online and never calls a model.
