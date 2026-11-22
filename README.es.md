@@ -11,6 +11,8 @@
 
 Complemento de comprobación de libros de facturas para DeepSeek Harness, pensado para revisores financieros y de reembolsos: lee un libro y comprueba duplicados, aritmética, titular, fechas y plantillas; devuelve una lista de anomalías y un libro de trabajo de tres hojas. No modifica el original, no se conecta a la red y no llama a ningún modelo.
 
+Última verificación: DeepSeek Harness `dsh-v0.2.3-alpha.1` (2026-11-22).
+
 [Instalación](#instalación-en-tres-pasos) · [Configuración](#configuración) · [FAQ](#faq) · [简体中文](README.md) · [English](README.en.md) · [Español](README.es.md) · [Português](README.pt.md) · [हिन्दी](README.hi.md)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-3366CC?style=flat-square&labelColor=2B3245)](LICENSE)
@@ -47,7 +49,6 @@ Hay dos decisiones deliberadas. Un duplicado se identifica por **código + núme
 ![dsh-invoice-ledger: ejecución real de terminal](docs/assets/dsh-invoice-ledger-demo.gif)
 
 *Repetición animada de una ejecución real registrada en este repositorio.*
-
 
 ## Instalación en tres pasos
 

@@ -11,6 +11,8 @@
 
 DeepSeek Harness के लिए इनवॉइस बही जाँच प्लगइन, वित्त और प्रतिपूर्ति समीक्षकों के लिए: एक बही पढ़ता है और दोहराव, गणित, खरीदार, तिथियाँ व टेम्पलेट जाँचता है; विसंगति सूची और तीन शीट वाली वर्कबुक देता है। मूल फ़ाइल नहीं बदलता, नेटवर्क पर नहीं जाता, मॉडल नहीं बुलाता।
 
+अंतिम सत्यापन: DeepSeek Harness `dsh-v0.2.3-alpha.1` (2026-11-22).
+
 [इंस्टॉल](#तीन-चरणों-में-शुरुआत) · [कॉन्फ़िगरेशन](#कॉन्फ़िगरेशन) · [FAQ](#faq) · [简体中文](README.md) · [English](README.en.md) · [Español](README.es.md) · [Português](README.pt.md) · [हिन्दी](README.hi.md)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-3366CC?style=flat-square&labelColor=2B3245)](LICENSE)
@@ -47,7 +49,6 @@ dsh plugin --profile <name> add dsh-invoice-ledger
 ![dsh-invoice-ledger का असली टर्मिनल रन](docs/assets/dsh-invoice-ledger-demo.gif)
 
 *इस रिपॉज़िटरी में दर्ज असली रन का एनिमेटेड रीप्ले।*
-
 
 ## तीन चरणों में शुरुआत
 

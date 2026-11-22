@@ -11,6 +11,8 @@
 
 An invoice-ledger checker plugin for DeepSeek Harness, built for finance and reimbursement reviewers: it reads one ledger and checks duplicate claims, arithmetic, buyer identity, dates and template placeholders, then returns an anomaly list plus a three-sheet workbook. It never modifies the original, never goes online and never calls a model.
 
+Last verified on DeepSeek Harness `dsh-v0.2.3-alpha.1` (2026-11-22).
+
 [Install](#three-step-setup) · [Configuration](#configuration) · [FAQ](#faq) · [简体中文](README.md) · [English](README.en.md) · [Español](README.es.md) · [Português](README.pt.md) · [हिन्दी](README.hi.md)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-3366CC?style=flat-square&labelColor=2B3245)](LICENSE)
@@ -47,7 +49,6 @@ Two things are deliberate. A duplicate is keyed on **invoice code + number, neve
 ![dsh-invoice-ledger: real terminal run](docs/assets/dsh-invoice-ledger-demo.gif)
 
 *Animated replay of a real run recorded in this repository.*
-
 
 ## Three-step setup
 

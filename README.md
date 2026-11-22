@@ -11,6 +11,8 @@
 
 面向财务与报销审核岗的 DeepSeek Harness 检查插件：读一份台账，核对重复报销、价税勾稽、抬头、日期与模板占位符，输出异常清单和三页工作簿；不改原件、不联网、不调用模型。
 
+最近一次核验：DeepSeek Harness `dsh-v0.2.3-alpha.1`（2026-11-22）。
+
 [安装](#三步上手) · [配置](#配置) · [FAQ](#faq) · [简体中文](README.md) · [English](README.en.md) · [Español](README.es.md) · [Português](README.pt.md) · [हिन्दी](README.hi.md)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-3366CC?style=flat-square&labelColor=2B3245)](LICENSE)
